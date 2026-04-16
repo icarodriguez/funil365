@@ -4087,14 +4087,6 @@
       const node = { id, key, x, y, title: bd.label, note: '', url: '', conv: bd.conv, impressoes: 0, leads: 0, vendas: 0, receita: 0 };
       f.nodes.push(node); renderNode(node); updateEmpty(); updateStats(); selectNode(id); save();
     }
-    function deleteNode(id) {
-      const f = af(); if (!f) return;
-      f.nodes = f.nodes.filter(n => n.id !== id);
-      f.connections = f.connections.filter(c => c.from !== id && c.to !== id);
-      document.getElementById(id)?.remove();
-      if (UI.selId === id) { UI.selId = null; renderProps(null); }
-      drawLines(); updateEmpty(); updateStats(); save();
-    }
     function addConn(from, to) {
       const f = af(); if (!f) return;
       if (f.connections.find(c => c.from === from && c.to === to)) return;
@@ -4213,7 +4205,7 @@
       <div class="prow"><label>Receita (R$)</label><input id="p-rec" type="number" min="0" value="${nd.receita || 0}"/></div>
       <div class="prow"><label>Notas / Script</label><textarea id="p-note" placeholder="URL, copy, observações...">${nd.note || ''}</textarea></div>
       <div class="pdanger" onclick="deleteNode('${id}')"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 2l9 9M11 2L2 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Remover bloco</div>`;
-        const bind = (eid, prop, isNum) => document.getElementById(eid)?.addEventListener('change', e => { nd[prop] = isNum ? Number(e.target.value) : e.target.value; renderCanvas(); renderProps(id); save(); });
+        const bind = (eid, prop, isNum) => document.getElementById(eid)?.addEventListener('change', e => { nd[prop] = isNum ? Number(e.target.value) : e.target.value; if (isNum) { renderCanvas(); renderProps(id); } save(); });
         bind('p-name', 'title'); bind('p-url', 'url'); bind('p-imp', 'impressoes', true); bind('p-lead', 'leads', true); bind('p-vend', 'vendas', true); bind('p-rec', 'receita', true); bind('p-note', 'note');
         document.getElementById('p-conv')?.addEventListener('input', e => { nd.conv = parseInt(e.target.value); document.getElementById('p-conv-v').textContent = nd.conv + '%'; updateStats(); drawLines(); save(); });
       } else if (f.textNodes) {
@@ -4393,6 +4385,7 @@
       }
     });
     document.addEventListener('keydown', e => {
+      if (e.target.closest('input,textarea,[contenteditable]')) return;
       if ((e.ctrlKey || e.metaKey) && e.key === 'z' && drawState.active !== 'cursor') { e.preventDefault(); undoDraw(); }
       if (e.key === 'v') setTool('cursor');
       if (e.key === 'p') setTool('brush');
@@ -4505,12 +4498,12 @@
     // ══════════════════════════════════════════
     // AI CHAT
     // ══════════════════════════════════════════
-    let aiConfig = {
+    const aiConfig = {
       model: 'groq',
       keys: {
-        gemini: 'SUA_CHAVE_AQUI'
-    openai: 'SUA_CHAVE_AQUI'
-    groq: 'SUA_CHAVE_AQUI'
+        groq: 'INSERIR_CHAVE_GROQ',
+        openai: 'INSERIR_CHAVE_OPENAI',
+        gemini: 'INSERIR_CHAVE_GEMINI'
       },
       history: []
     };
@@ -4735,6 +4728,8 @@ REGRAS:
       // Disable editing UI
       document.getElementById('sidebar').style.opacity = '0.4';
       document.getElementById('sidebar').style.pointerEvents = 'none';
+      document.getElementById('props').style.opacity = '0.4';
+      document.getElementById('props').style.pointerEvents = 'none';
     }
 
     // ══════════════════════════════════════════

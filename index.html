@@ -4057,37 +4057,38 @@
       webinario_mentoria: {
         name: 'Webinário + Mentoria', desc: 'Webinar como qualificador → pitch para mentoria → WhatsApp → SDR → Setter → call Closer', emoji: '🎓',
         blocks: [
-          { k: 'trafego_pago',      x: 40,   y: 60  },
-          { k: 'trafego_organico',  x: 40,   y: 240 },
-          { k: 'criativo_vid',      x: 230,  y: 60  },
-          { k: 'criativo_img',      x: 230,  y: 240 },
-          { k: 'pag_captura',       x: 420,  y: 150 },
-          { k: 'email_bv',          x: 610,  y: 240 },
-          { k: 'email_conteudo',    x: 800,  y: 240 },
-          { k: 'webinar',           x: 610,  y: 60  },
-          { k: 'pag_vendas_vsl',    x: 800,  y: 60  },
-          { k: 'email_promo',       x: 990,  y: 240 },
-          { k: 'whatsapp',          x: 990,  y: 60  },
-          { k: 'sdr',               x: 1180, y: 60  },
-          { k: 'condicional',       x: 1370, y: 60  },
-          { k: 'closer',            x: 1560, y: 60  },
-          { k: 'pag_pedido',        x: 1750, y: 60  },
-          { k: 'order_bump',        x: 1750, y: 160 },
-          { k: 'pag_obrigado',      x: 1940, y: 60  },
-          { k: 'upsell',            x: 2130, y: 60  },
-          { k: 'area_membros',      x: 2320, y: 60  },
-          { k: 'downsell',          x: 1940, y: 240 },
+          { k: 'trafego_pago',      x: 40,   y: 60  },   // 0
+          { k: 'trafego_organico',  x: 40,   y: 240 },   // 1
+          { k: 'criativo_vid',      x: 230,  y: 60  },   // 2
+          { k: 'criativo_img',      x: 230,  y: 240 },   // 3
+          { k: 'pag_captura',       x: 420,  y: 150 },   // 4
+          { k: 'email_bv',          x: 610,  y: 240 },   // 5
+          { k: 'email_conteudo',    x: 800,  y: 240 },   // 6
+          { k: 'webinar',           x: 610,  y: 60  },   // 7
+          { k: 'pag_vendas_vsl',    x: 800,  y: 60  },   // 8
+          { k: 'email_promo',       x: 990,  y: 240 },   // 9
+          { k: 'whatsapp',          x: 990,  y: 60  },   // 10
+          { k: 'sdr',               x: 1180, y: 60  },   // 11
+          { k: 'setter',            x: 1370, y: 60  },   // 12 (NOVO)
+          { k: 'condicional',       x: 1560, y: 60  },   // 13 (era 12)
+          { k: 'closer',            x: 1750, y: 60  },   // 14 (era 13)
+          { k: 'pag_pedido',        x: 1940, y: 60  },   // 15 (era 14)
+          { k: 'order_bump',        x: 1940, y: 160 },   // 16 (era 15)
+          { k: 'pag_obrigado',      x: 2130, y: 60  },   // 17 (era 16)
+          { k: 'upsell',            x: 2320, y: 60  },   // 18 (era 17)
+          { k: 'area_membros',      x: 2510, y: 60  },   // 19 (era 18)
+          { k: 'downsell',          x: 2130, y: 240 },   // 20 (era 19)
         ],
         conns: [
           [0,2],[1,3],[2,4],[3,4],
           [4,5],[4,7],
           [5,6],[6,9],[7,8],
           [8,10],[9,10],
-          [10,11],[11,12],
-          [12,13],[12,5],
-          [13,14],[14,15],[14,16],[15,16],
-          [16,17],[17,18],
-          [17,19],[19,18]
+          [10,11],[11,12],[12,13],
+          [13,14],[13,5],
+          [14,15],[15,16],[15,17],[16,17],
+          [17,18],[18,19],
+          [18,20],[20,19]
         ]
       },
 
@@ -4242,7 +4243,7 @@
           { k: 'sdr',               x: 990,  y: 60  },
           { k: 'pag_vendas_vsl',    x: 800,  y: 240 },
           { k: 'pag_pedido',        x: 990,  y: 240 },
-          { k: 'order_bump',        x: 990,  y: 360 },
+          { k: 'order_bump',        x: 990,  y: 160 },
           { k: 'pag_obrigado',      x: 1180, y: 240 },
           { k: 'upsell',            x: 1370, y: 240 },
           { k: 'area_membros',      x: 1560, y: 240 },

@@ -4018,148 +4018,276 @@
 
       // ── WEBINÁRIO ──
       webinario: {
-        name: 'Webinário de Vendas', desc: 'Aquecimento por email → evento → pitch ao vivo → carrinho', emoji: '🖥️',
+        name: 'Webinário de Vendas', desc: 'Aquecimento pré-webinar (show-up sequence) → pitch ao vivo → follow-up urgência → recuperação de não-presentes', emoji: '🖥️',
         blocks: [
-          { k: 'trafego_pago', x: 40, y: 150 },
-          { k: 'pag_captura', x: 230, y: 150 },
-          { k: 'email_bv', x: 420, y: 240 },
-          { k: 'email_conteudo', x: 610, y: 240 },
-          { k: 'webinar', x: 420, y: 60 },
-          { k: 'email_promo', x: 800, y: 240 },
-          { k: 'pag_vendas', x: 610, y: 60 },
-          { k: 'pag_pedido', x: 800, y: 60 },
-          { k: 'pag_obrigado', x: 990, y: 60 },
-          { k: 'upsell', x: 990, y: 240 },
-          { k: 'downsell', x: 1180, y: 240 }
+          { k: 'trafego_pago',      x: 40,   y: 60  },
+          { k: 'trafego_organico',  x: 40,   y: 240 },
+          { k: 'criativo_vid',      x: 230,  y: 60  },
+          { k: 'criativo_img',      x: 230,  y: 240 },
+          { k: 'pag_captura',       x: 420,  y: 150 },
+          { k: 'email_bv',          x: 610,  y: 240 },
+          { k: 'email_conteudo',    x: 800,  y: 240 },
+          { k: 'email_conteudo',    x: 990,  y: 240 },
+          { k: 'webinar',           x: 610,  y: 60  },
+          { k: 'email_promo',       x: 1180, y: 240 },
+          { k: 'pag_vendas',        x: 800,  y: 60  },
+          { k: 'pag_pedido',        x: 990,  y: 60  },
+          { k: 'order_bump',        x: 990,  y: 160 },
+          { k: 'pag_obrigado',      x: 1180, y: 60  },
+          { k: 'upsell',            x: 1370, y: 60  },
+          { k: 'downsell',          x: 1370, y: 240 },
+          { k: 'area_membros',      x: 1560, y: 60  },
+          { k: 'condicional',       x: 1180, y: 420 },
+          { k: 'whatsapp',          x: 1370, y: 420 },
+          { k: 'email_promo',       x: 1560, y: 420 },
         ],
-        conns: [[0,1],[1,2],[1,4],[2,3],[3,5],[4,6],[5,6],[6,7],[7,8],[8,9],[9,10]]
+        conns: [
+          [0,2],[1,3],[2,4],[3,4],
+          [4,5],[4,8],
+          [5,6],[6,7],[7,9],
+          [8,10],[9,10],
+          [10,11],[11,12],[11,13],[12,13],
+          [13,14],[14,15],[14,16],[15,16],
+          [8,17],[17,18],[17,19]
+        ]
       },
 
       // ── WEBINÁRIO + MENTORIA ──
       webinario_mentoria: {
-        name: 'Webinário + Mentoria', desc: 'Webinar como qualificador para programa de mentoria', emoji: '🎓',
+        name: 'Webinário + Mentoria', desc: 'Webinar como qualificador → pitch para mentoria → WhatsApp → SDR → Setter → call Closer', emoji: '🎓',
         blocks: [
-          { k: 'trafego_pago', x: 40, y: 60 },
-          { k: 'trafego_organico', x: 40, y: 240 },
-          { k: 'pag_captura', x: 230, y: 150 },
-          { k: 'email_bv', x: 420, y: 240 },
-          { k: 'webinar', x: 420, y: 60 },
-          { k: 'email_conteudo', x: 610, y: 240 },
-          { k: 'pag_vendas_vsl', x: 610, y: 60 },
-          { k: 'whatsapp', x: 800, y: 150 },
-          { k: 'pag_pedido', x: 990, y: 60 },
-          { k: 'pag_obrigado', x: 1180, y: 60 },
-          { k: 'upsell', x: 1180, y: 240 }
+          { k: 'trafego_pago',      x: 40,   y: 60  },
+          { k: 'trafego_organico',  x: 40,   y: 240 },
+          { k: 'criativo_vid',      x: 230,  y: 60  },
+          { k: 'criativo_img',      x: 230,  y: 240 },
+          { k: 'pag_captura',       x: 420,  y: 150 },
+          { k: 'email_bv',          x: 610,  y: 240 },
+          { k: 'email_conteudo',    x: 800,  y: 240 },
+          { k: 'webinar',           x: 610,  y: 60  },
+          { k: 'pag_vendas_vsl',    x: 800,  y: 60  },
+          { k: 'email_promo',       x: 990,  y: 240 },
+          { k: 'whatsapp',          x: 990,  y: 60  },
+          { k: 'sdr',               x: 1180, y: 60  },
+          { k: 'condicional',       x: 1370, y: 60  },
+          { k: 'closer',            x: 1560, y: 60  },
+          { k: 'pag_pedido',        x: 1750, y: 60  },
+          { k: 'order_bump',        x: 1750, y: 160 },
+          { k: 'pag_obrigado',      x: 1940, y: 60  },
+          { k: 'upsell',            x: 2130, y: 60  },
+          { k: 'area_membros',      x: 2320, y: 60  },
+          { k: 'downsell',          x: 1940, y: 240 },
         ],
-        conns: [[0,2],[1,2],[2,3],[2,4],[3,5],[4,6],[5,6],[6,7],[7,8],[8,9],[8,10]]
+        conns: [
+          [0,2],[1,3],[2,4],[3,4],
+          [4,5],[4,7],
+          [5,6],[6,9],[7,8],
+          [8,10],[9,10],
+          [10,11],[11,12],
+          [12,13],[12,5],
+          [13,14],[14,15],[14,16],[15,16],
+          [16,17],[17,18],
+          [17,19],[19,18]
+        ]
       },
 
       // ── CAPTAÇÃO DE LEADS ──
       captacao_leads: {
-        name: 'Captação de Leads', desc: 'Isca digital → captura → nutrição → qualificação via WhatsApp', emoji: '🎣',
+        name: 'Captação de Leads', desc: 'Isca digital → captura → nutrição → qualificação via WhatsApp/SDR → venda', emoji: '🎣',
         blocks: [
-          { k: 'trafego_pago', x: 40, y: 60 },
-          { k: 'trafego_organico', x: 40, y: 240 },
-          { k: 'criativo_img', x: 230, y: 60 },
-          { k: 'criativo_vid', x: 230, y: 240 },
-          { k: 'pag_captura', x: 420, y: 150 },
-          { k: 'pag_obrigado', x: 610, y: 60 },
-          { k: 'email_bv', x: 610, y: 240 },
-          { k: 'email_conteudo', x: 800, y: 240 },
-          { k: 'whatsapp', x: 800, y: 60 },
-          { k: 'email_promo', x: 990, y: 240 }
+          { k: 'trafego_pago',      x: 40,   y: 60  },
+          { k: 'trafego_organico',  x: 40,   y: 240 },
+          { k: 'criativo_vid',      x: 230,  y: 60  },
+          { k: 'criativo_img',      x: 230,  y: 240 },
+          { k: 'pag_captura',       x: 420,  y: 150 },
+          { k: 'pag_obrigado',      x: 610,  y: 60  },
+          { k: 'email_bv',          x: 610,  y: 240 },
+          { k: 'email_conteudo',    x: 800,  y: 240 },
+          { k: 'email_conteudo',    x: 990,  y: 240 },
+          { k: 'email_conteudo',    x: 1180, y: 240 },
+          { k: 'whatsapp',          x: 800,  y: 60  },
+          { k: 'sdr',               x: 990,  y: 60  },
+          { k: 'condicional',       x: 1180, y: 60  },
+          { k: 'pag_vendas',        x: 1370, y: 60  },
+          { k: 'pag_pedido',        x: 1560, y: 60  },
+          { k: 'pag_obrigado',      x: 1750, y: 60  },
+          { k: 'email_promo',       x: 1370, y: 240 },
+          { k: 'activecampaign',    x: 1560, y: 240 },
         ],
-        conns: [[0,2],[0,3],[1,2],[1,3],[2,4],[3,4],[4,5],[4,6],[5,8],[6,7],[7,9],[9,8]]
+        conns: [
+          [0,2],[1,3],[2,4],[3,4],
+          [4,5],[4,6],
+          [5,10],[6,7],[7,8],[8,9],[9,16],
+          [10,11],[11,12],
+          [12,13],[12,6],
+          [13,14],[14,15],
+          [16,13],[15,17]
+        ]
       },
 
       // ── NUTRIÇÃO RUSSELL BRUNSON ──
       nutricao_russel: {
-        name: 'Nutrição (Modelo Brunson)', desc: 'Sequência de valor antes de qualquer oferta — builds authority first', emoji: '🌱',
+        name: 'Nutrição (Soap Opera — Brunson)', desc: 'Sequência de 6 emails (Set Stage → Drama → Epiphany → Benefits → Urgência → Oferta) antes de qualquer pitch', emoji: '🌱',
         blocks: [
-          { k: 'trafego_organico', x: 40, y: 150 },
-          { k: 'pag_captura', x: 230, y: 150 },
-          { k: 'email_bv', x: 420, y: 240 },
-          { k: 'email_conteudo', x: 610, y: 240 },
-          { k: 'email_conteudo', x: 800, y: 240 },
-          { k: 'email_promo', x: 990, y: 240 },
-          { k: 'pag_vendas', x: 610, y: 60 },
-          { k: 'pag_pedido', x: 800, y: 60 },
-          { k: 'pag_obrigado', x: 990, y: 60 },
-          { k: 'upsell', x: 1180, y: 60 },
-          { k: 'downsell', x: 1180, y: 240 }
+          { k: 'trafego_organico',  x: 40,   y: 150 },
+          { k: 'pag_captura',       x: 230,  y: 150 },
+          { k: 'pag_vendas_vsl',    x: 420,  y: 60  },
+          { k: 'email_bv',          x: 420,  y: 240 },
+          { k: 'email_conteudo',    x: 610,  y: 240 },
+          { k: 'email_conteudo',    x: 800,  y: 240 },
+          { k: 'email_conteudo',    x: 990,  y: 240 },
+          { k: 'email_conteudo',    x: 1180, y: 240 },
+          { k: 'email_promo',       x: 1370, y: 240 },
+          { k: 'pag_pedido',        x: 610,  y: 60  },
+          { k: 'order_bump',        x: 610,  y: 160 },
+          { k: 'pag_obrigado',      x: 800,  y: 60  },
+          { k: 'upsell',            x: 990,  y: 60  },
+          { k: 'downsell',          x: 1180, y: 60  },
+          { k: 'area_membros',      x: 1370, y: 60  },
+          { k: 'activecampaign',    x: 1560, y: 60  },
+          { k: 'condicional',       x: 1370, y: 420 },
+          { k: 'whatsapp',          x: 1560, y: 420 },
         ],
-        conns: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[3,6],[6,7],[7,8],[8,9],[8,10]]
+        conns: [
+          [0,1],
+          [1,2],[1,3],
+          [2,9],[3,4],[4,5],[5,6],[6,7],[7,8],[8,2],
+          [9,10],[9,11],[10,11],
+          [11,12],[12,13],[12,14],[13,14],
+          [14,15],
+          [8,16],[16,17]
+        ]
       },
 
       // ── FUNIL DE ANÚNCIO DIRETO ──
       anuncio: {
-        name: 'Anúncio Direto para Venda', desc: 'Criativo → landing page → checkout — para produtos de ticket médio', emoji: '📢',
+        name: 'Anúncio Direto para Venda', desc: 'Criativo → LP → vendas → checkout com bump → upsell → recuperação de carrinho por email e WhatsApp', emoji: '📢',
         blocks: [
-          { k: 'trafego_pago', x: 40, y: 150 },
-          { k: 'criativo_vid', x: 230, y: 60 },
-          { k: 'criativo_img', x: 230, y: 240 },
-          { k: 'landing_page', x: 420, y: 150 },
-          { k: 'pag_vendas', x: 610, y: 60 },
-          { k: 'pag_pedido', x: 800, y: 60 },
-          { k: 'order_bump', x: 800, y: 200 },
-          { k: 'pag_obrigado', x: 990, y: 60 },
-          { k: 'upsell', x: 990, y: 240 },
-          { k: 'email_bv', x: 610, y: 240 }
+          { k: 'trafego_pago',      x: 40,   y: 150 },
+          { k: 'criativo_vid',      x: 230,  y: 60  },
+          { k: 'criativo_img',      x: 230,  y: 240 },
+          { k: 'criativo_car',      x: 230,  y: 420 },
+          { k: 'landing_page',      x: 420,  y: 150 },
+          { k: 'pag_vendas',        x: 610,  y: 60  },
+          { k: 'pag_pedido',        x: 800,  y: 60  },
+          { k: 'order_bump',        x: 800,  y: 160 },
+          { k: 'pag_obrigado_count',x: 990,  y: 60  },
+          { k: 'upsell',            x: 1180, y: 60  },
+          { k: 'downsell',          x: 1180, y: 240 },
+          { k: 'area_membros',      x: 1370, y: 60  },
+          { k: 'email_bv',          x: 610,  y: 240 },
+          { k: 'email_conteudo',    x: 800,  y: 240 },
+          { k: 'condicional',       x: 990,  y: 240 },
+          { k: 'whatsapp',          x: 1180, y: 420 },
         ],
-        conns: [[0,1],[0,2],[1,3],[2,3],[3,4],[4,5],[5,6],[5,7],[6,7],[7,8],[3,9]]
+        conns: [
+          [0,1],[0,2],[0,3],[1,4],[2,4],[3,4],
+          [4,5],[4,12],
+          [5,6],[6,7],[6,8],[7,8],
+          [8,9],[9,10],[9,11],[10,11],
+          [12,13],[13,14],[14,15],
+          [6,14]
+        ]
       },
 
       // ── STORY365 ──
       story365: {
-        name: 'STORY365 — Sequência de Stories', desc: 'Storytelling via stories → captura → nutrição → venda', emoji: '📱',
+        name: 'STORY365 — Sequência de Stories', desc: 'Storytelling via Stories → Manychat DM automático → captura → nutrição → VSL → checkout', emoji: '📱',
         blocks: [
-          { k: 'instagram', x: 40, y: 150 },
-          { k: 'criativo_vid', x: 230, y: 60 },
-          { k: 'criativo_img', x: 230, y: 240 },
-          { k: 'pag_captura', x: 420, y: 150 },
-          { k: 'email_bv', x: 610, y: 240 },
-          { k: 'email_conteudo', x: 800, y: 240 },
-          { k: 'email_promo', x: 990, y: 240 },
-          { k: 'pag_vendas', x: 610, y: 60 },
-          { k: 'pag_pedido', x: 800, y: 60 },
-          { k: 'pag_obrigado', x: 990, y: 60 }
+          { k: 'instagram',         x: 40,   y: 150 },
+          { k: 'criativo_vid',      x: 230,  y: 60  },
+          { k: 'criativo_img',      x: 230,  y: 240 },
+          { k: 'manychat',          x: 420,  y: 150 },
+          { k: 'pag_captura',       x: 610,  y: 150 },
+          { k: 'whatsapp',          x: 800,  y: 60  },
+          { k: 'pag_vendas_vsl',    x: 990,  y: 60  },
+          { k: 'email_bv',          x: 800,  y: 240 },
+          { k: 'email_conteudo',    x: 990,  y: 240 },
+          { k: 'email_conteudo',    x: 1180, y: 240 },
+          { k: 'email_promo',       x: 1370, y: 240 },
+          { k: 'pag_pedido',        x: 1180, y: 60  },
+          { k: 'order_bump',        x: 1180, y: 160 },
+          { k: 'pag_obrigado',      x: 1370, y: 60  },
+          { k: 'upsell',            x: 1560, y: 60  },
+          { k: 'downsell',          x: 1560, y: 240 },
+          { k: 'area_membros',      x: 1750, y: 60  },
+          { k: 'condicional',       x: 1750, y: 240 },
         ],
-        conns: [[0,1],[0,2],[1,3],[2,3],[3,4],[3,7],[4,5],[5,6],[6,7],[7,8],[8,9]]
+        conns: [
+          [0,1],[0,2],[1,3],[2,3],
+          [3,4],[3,5],
+          [4,7],[4,6],
+          [5,6],
+          [7,8],[8,9],[9,10],[10,6],
+          [6,11],[11,12],[11,13],[12,13],
+          [13,14],[14,15],[14,16],[15,16],
+          [13,17]
+        ]
       },
 
       // ── DM INSTAGRAM ──
       dm_instagram: {
-        name: 'DM Instagram', desc: 'Criativo orgânico → engajamento → DM qualificador → venda', emoji: '✉️',
+        name: 'DM Instagram', desc: 'Criativo orgânico → Manychat DM automático → qualificação quente/fria → SDR → VSL → checkout', emoji: '✉️',
         blocks: [
-          { k: 'instagram', x: 40, y: 150 },
-          { k: 'criativo_vid', x: 230, y: 60 },
-          { k: 'criativo_img', x: 230, y: 240 },
-          { k: 'manychat', x: 420, y: 150 },
-          { k: 'condicional', x: 610, y: 150 },
-          { k: 'whatsapp', x: 800, y: 60 },
-          { k: 'pag_vendas_vsl', x: 800, y: 240 },
-          { k: 'pag_pedido', x: 990, y: 60 },
-          { k: 'pag_obrigado', x: 1180, y: 60 }
+          { k: 'instagram',         x: 40,   y: 150 },
+          { k: 'criativo_vid',      x: 230,  y: 60  },
+          { k: 'criativo_img',      x: 230,  y: 240 },
+          { k: 'manychat',          x: 420,  y: 150 },
+          { k: 'condicional',       x: 610,  y: 150 },
+          { k: 'whatsapp',          x: 800,  y: 60  },
+          { k: 'sdr',               x: 990,  y: 60  },
+          { k: 'pag_vendas_vsl',    x: 800,  y: 240 },
+          { k: 'pag_pedido',        x: 990,  y: 240 },
+          { k: 'order_bump',        x: 990,  y: 360 },
+          { k: 'pag_obrigado',      x: 1180, y: 240 },
+          { k: 'upsell',            x: 1370, y: 240 },
+          { k: 'area_membros',      x: 1560, y: 240 },
+          { k: 'email_bv',          x: 1180, y: 60  },
+          { k: 'email_conteudo',    x: 1370, y: 60  },
+          { k: 'email_promo',       x: 1560, y: 60  },
         ],
-        conns: [[0,1],[0,2],[1,3],[2,3],[3,4],[4,5],[4,6],[5,7],[6,7],[7,8]]
+        conns: [
+          [0,1],[0,2],[1,3],[2,3],
+          [3,4],
+          [4,5],[4,7],
+          [5,6],[6,7],
+          [7,8],[8,9],[8,10],[9,10],
+          [10,11],[11,12],
+          [10,13],[13,14],[14,15],[15,7]
+        ]
       },
 
       // ── WHATSAPP TRANSMISSÃO ──
       whatsapp_transmissao: {
-        name: 'WhatsApp Transmissão / Nutrição', desc: 'Lista de broadcast para nutrição e venda direta', emoji: '📲',
+        name: 'WhatsApp Transmissão / Nutrição', desc: 'Captura → lista de broadcast → segmentação por engajamento → nutrição email em paralelo → venda', emoji: '📲',
         blocks: [
-          { k: 'trafego_pago', x: 40, y: 150 },
-          { k: 'pag_captura', x: 230, y: 150 },
-          { k: 'whatsapp', x: 420, y: 60 },
-          { k: 'email_bv', x: 420, y: 240 },
-          { k: 'email_conteudo', x: 610, y: 240 },
-          { k: 'email_promo', x: 800, y: 240 },
-          { k: 'pag_vendas', x: 610, y: 60 },
-          { k: 'pag_pedido', x: 800, y: 60 },
-          { k: 'pag_obrigado', x: 990, y: 60 },
-          { k: 'upsell', x: 990, y: 240 }
+          { k: 'trafego_pago',      x: 40,   y: 60  },
+          { k: 'instagram',         x: 40,   y: 240 },
+          { k: 'pag_captura',       x: 230,  y: 150 },
+          { k: 'whatsapp',          x: 420,  y: 60  },
+          { k: 'email_bv',          x: 420,  y: 240 },
+          { k: 'email_conteudo',    x: 610,  y: 240 },
+          { k: 'email_conteudo',    x: 800,  y: 240 },
+          { k: 'email_promo',       x: 990,  y: 240 },
+          { k: 'condicional',       x: 610,  y: 60  },
+          { k: 'pag_vendas',        x: 800,  y: 60  },
+          { k: 'pag_pedido',        x: 990,  y: 60  },
+          { k: 'order_bump',        x: 990,  y: 160 },
+          { k: 'pag_obrigado',      x: 1180, y: 60  },
+          { k: 'upsell',            x: 1370, y: 60  },
+          { k: 'downsell',          x: 1370, y: 240 },
+          { k: 'area_membros',      x: 1560, y: 60  },
+          { k: 'activecampaign',    x: 1180, y: 240 },
+          { k: 'sms',               x: 610,  y: 420 },
         ],
-        conns: [[0,1],[1,2],[1,3],[2,6],[3,4],[4,5],[5,6],[6,7],[7,8],[8,9]]
+        conns: [
+          [0,2],[1,2],
+          [2,3],[2,4],
+          [3,8],[4,5],[5,6],[6,7],[7,9],
+          [8,9],[8,17],
+          [9,10],[10,11],[10,12],[11,12],
+          [12,13],[13,14],[13,15],[14,15],
+          [12,16]
+        ]
       },
 
       // ── WHATSAPP 1:1 ──

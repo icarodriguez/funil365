@@ -30,9 +30,9 @@
       --purple-bg: rgba(157, 113, 255, .13);
       --shadow: 0 2px 8px rgba(0, 0, 0, .5), 0 6px 24px rgba(0, 0, 0, .4);
       --shadow-lg: 0 10px 48px rgba(0, 0, 0, .7);
-      --glass-bg: rgba(20, 23, 33, .72);
-      --glass-border: rgba(255, 255, 255, .09);
-      --glass-shine: inset 0 1px 0 rgba(255, 255, 255, .07);
+      --glass-bg: rgba(20, 23, 33, .90);
+      --glass-border: rgba(255, 255, 255, .16);
+      --glass-shine: inset 0 1px 0 rgba(255, 255, 255, .13);
       --radius: 10px;
       --radius-lg: 14px;
       --radius-xl: 18px;
@@ -579,7 +579,8 @@
     #workspace {
       display: flex;
       flex: 1;
-      overflow: hidden
+      overflow: hidden;
+      position: relative
     }
 
     /* ── SIDEBAR ── */
@@ -590,7 +591,12 @@
       border-right: 1px solid var(--border);
       display: flex;
       flex-direction: column;
-      overflow: hidden
+      overflow: hidden;
+      transition: width .2s ease
+    }
+
+    #props {
+      transition: width .2s ease
     }
 
     .sb-section {
@@ -1071,8 +1077,8 @@
     .conn-out,
     .conn-in {
       position: absolute;
-      left: 50%;
-      transform: translateX(-50%);
+      top: 50%;
+      transform: translateY(-50%);
       width: 12px;
       height: 12px;
       border-radius: 50%;
@@ -1085,11 +1091,11 @@
     }
 
     .conn-out {
-      bottom: -6px
+      right: -6px
     }
 
     .conn-in {
-      top: -6px
+      left: -6px
     }
 
     .node:hover .conn-out,
@@ -2436,10 +2442,10 @@
     /* ICON NODE – glass shape */
     .node-icon-shape {
       background: var(--glass-bg);
-      backdrop-filter: blur(18px) saturate(140%);
-      -webkit-backdrop-filter: blur(18px) saturate(140%);
+      backdrop-filter: blur(30px) saturate(200%);
+      -webkit-backdrop-filter: blur(30px) saturate(200%);
       border: 1px solid var(--glass-border);
-      box-shadow: 0 6px 24px rgba(0, 0, 0, .45), var(--glass-shine);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, .55), var(--glass-shine);
     }
 
     .node-icon-shape:hover {
@@ -3181,10 +3187,15 @@
     <!-- WORKSPACE -->
     <div id="workspace">
       <div id="sidebar">
+        <div id="sb-top-bar" style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px 4px;border-bottom:1px solid var(--border);flex-shrink:0">
+          <span style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em">Elementos</span>
+          <button onclick="toggleSidebar()" id="sb-toggle-btn" title="Ocultar sidebar" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:16px;line-height:1;padding:2px 4px;border-radius:4px;display:flex;align-items:center">‹</button>
+        </div>
         <div id="sb-scroll" style="flex:1;overflow-y:auto">
           <div id="sb-scroll-inner"></div>
         </div>
       </div>
+      <button id="sb-show-btn" onclick="toggleSidebar()" title="Mostrar elementos" style="display:none;position:absolute;left:0;top:50%;transform:translateY(-50%);z-index:200;background:var(--bg2);border:1px solid var(--border);border-left:none;border-radius:0 6px 6px 0;padding:8px 5px;cursor:pointer;color:var(--text3);font-size:16px;line-height:1">›</button>
       <div id="canvas-wrap" ondragover="event.preventDefault()" ondrop="dropBlock(event)" onclick="canvasClick(event)"
         oncontextmenu="canvasCtx(event)">
         <svg id="draw-canvas"
@@ -3203,9 +3214,11 @@
           </div>
         </div>
       </div>
+      <button id="props-show-btn" onclick="toggleProps()" title="Mostrar propriedades" style="display:none;position:absolute;right:0;top:50%;transform:translateY(-50%);z-index:200;background:var(--bg2);border:1px solid var(--border);border-right:none;border-radius:6px 0 0 6px;padding:8px 5px;cursor:pointer;color:var(--text3);font-size:16px;line-height:1">‹</button>
       <div id="props">
         <div id="ph">
           <h3>Propriedades</h3>
+          <button onclick="toggleProps()" title="Ocultar painel" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:16px;line-height:1;padding:2px 4px;border-radius:4px">›</button>
         </div>
         <div id="pb">
           <p style="font-size:12px;color:var(--text3);line-height:1.7;padding-top:2px">Selecione um bloco para editar.
@@ -3538,7 +3551,13 @@
         <button class="gm-close" onclick="closeGenModal('profile-overlay')">×</button>
       </div>
       <div class="prof-av-wrap">
-        <div class="prof-av" id="prof-av-disp" style="background:var(--user-color)">?</div>
+        <div style="position:relative;display:inline-block">
+          <div class="prof-av" id="prof-av-disp" style="background:var(--user-color)">?</div>
+          <label for="prof-photo-input" title="Alterar foto" style="position:absolute;bottom:-4px;right:-4px;width:22px;height:22px;border-radius:50%;background:var(--bg3);border:1.5px solid var(--border2);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text2)">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          </label>
+          <input type="file" id="prof-photo-input" accept="image/*" style="display:none" onchange="handleProfilePhoto(this)">
+        </div>
       </div>
       <div class="prof-form">
         <div class="prof-field"><label>Nome completo</label><input id="prof-name" type="text" placeholder="Seu nome" />
@@ -4440,11 +4459,11 @@
       <button class="node-del">×</button>
       <div class="conn-out"></div>`;
       } else if (bd.shape === 'email') {
-        el.innerHTML = `<div class="conn-in" style="top:-5px"></div><div class="node-icon-wrap"><div class="node-icon-shape" style="background:${bd.bg};border:1.5px solid ${bd.color}30"><div class="ni-inner">${svgIcon('email', bd.color, 22)}</div></div><div class="node-label" style="color:${bd.color}">${node.title}</div><div class="node-icon-metrics">${renderIconMetrics(node)}</div></div><button class="node-del">×</button><div class="conn-out" style="bottom:-5px"></div>`;
+        el.innerHTML = `<div class="conn-in"></div><div class="node-icon-wrap"><div class="node-icon-shape" style="background:${bd.bg};border:1.5px solid ${bd.color}30"><div class="ni-inner">${svgIcon('email', bd.color, 22)}</div></div><div class="node-label" style="color:${bd.color}">${node.title}</div><div class="node-icon-metrics">${renderIconMetrics(node)}</div></div><button class="node-del">×</button><div class="conn-out"></div>`;
       } else if (bd.shape === 'diamond') {
-        el.innerHTML = `<div class="conn-in" style="top:-5px"></div><div class="node-icon-wrap"><div class="node-icon-shape diamond" style="background:${bd.bg};border:1.5px solid ${bd.color}35"><div class="ni-inner">${svgIcon(bd.icon || 'cursor', bd.color, 22)}</div></div><div class="node-label" style="margin-top:10px">${node.title}</div><div class="node-icon-metrics">${renderIconMetrics(node)}</div></div><button class="node-del">×</button><div class="conn-out" style="bottom:-5px"></div>`;
+        el.innerHTML = `<div class="conn-in"></div><div class="node-icon-wrap"><div class="node-icon-shape diamond" style="background:${bd.bg};border:1.5px solid ${bd.color}35"><div class="ni-inner">${svgIcon(bd.icon || 'cursor', bd.color, 22)}</div></div><div class="node-label" style="margin-top:10px">${node.title}</div><div class="node-icon-metrics">${renderIconMetrics(node)}</div></div><button class="node-del">×</button><div class="conn-out"></div>`;
       } else {
-        el.innerHTML = `<div class="conn-in" style="top:-5px"></div><div class="node-icon-wrap"><div class="node-icon-shape" style="background:${bd.bg};border:1.5px solid ${bd.color}30"><div class="ni-inner">${svgIcon(bd.icon || 'globe', bd.color, 24)}</div></div><div class="node-label">${node.title}</div><div class="node-icon-metrics">${renderIconMetrics(node)}</div></div><button class="node-del">×</button><div class="conn-out" style="bottom:-5px"></div>`;
+        el.innerHTML = `<div class="conn-in"></div><div class="node-icon-wrap"><div class="node-icon-shape" style="background:${bd.bg};border:1.5px solid ${bd.color}30"><div class="ni-inner">${svgIcon(bd.icon || 'globe', bd.color, 24)}</div></div><div class="node-label">${node.title}</div><div class="node-icon-metrics">${renderIconMetrics(node)}</div></div><button class="node-del">×</button><div class="conn-out"></div>`;
       }
       el.querySelector('.node-del').addEventListener('click', () => deleteNode(node.id));
       el.querySelector('.conn-out').addEventListener('mousedown', e => { e.stopPropagation(); e.preventDefault(); UI.connFrom = node.id; });
@@ -4530,10 +4549,60 @@
       f.connections.push({ id: 'c' + (++UI.cCounter), from, to });
       drawLines(); updateStats(); save();
     }
+    // ── SIDEBAR + PROPS TOGGLE ──
+    function toggleSidebar() {
+      const sb = document.getElementById('sidebar');
+      const showBtn = document.getElementById('sb-show-btn');
+      const toggleBtn = document.getElementById('sb-toggle-btn');
+      const collapsed = sb.classList.toggle('sb-collapsed');
+      sb.style.width = collapsed ? '0' : '';
+      sb.style.overflow = collapsed ? 'hidden' : '';
+      sb.style.borderRight = collapsed ? 'none' : '';
+      showBtn.style.display = collapsed ? 'flex' : 'none';
+      if (toggleBtn) toggleBtn.style.display = collapsed ? 'none' : '';
+    }
+
+    function toggleProps() {
+      const props = document.getElementById('props');
+      const showBtn = document.getElementById('props-show-btn');
+      const collapsed = props.classList.toggle('props-collapsed');
+      props.style.width = collapsed ? '0' : '';
+      props.style.overflow = collapsed ? 'hidden' : '';
+      props.style.borderLeft = collapsed ? 'none' : '';
+      showBtn.style.display = collapsed ? 'flex' : 'none';
+    }
+
+    function showPropsIfCollapsed() {
+      const props = document.getElementById('props');
+      if (props.classList.contains('props-collapsed')) toggleProps();
+    }
+
+    // ── PROFILE PHOTO ──
+    function handleProfilePhoto(input) {
+      const file = input.files[0]; if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        const b64 = e.target.result;
+        _applyAvatarPhoto(b64);
+        // store temporarily until saveProfile
+        window._pendingProfilePhoto = b64;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function _applyAvatarPhoto(b64) {
+      ['user-avatar', 'ud-avatar', 'prof-av-disp'].forEach(id => {
+        const el = document.getElementById(id); if (!el) return;
+        el.innerHTML = `<img src="${b64}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">`;
+        el.style.background = 'none';
+      });
+    }
+
     function selectNode(id) {
       if (UI.selId) { document.getElementById(UI.selId)?.classList.remove('selected'); }
       UI.selId = id;
       document.getElementById(id)?.classList.add('selected');
+      showPropsIfCollapsed();
       renderProps(id);
     }
     function canvasClick(e) {
@@ -4556,9 +4625,9 @@
     // SVG LINES
     // ══════════════════════════════════════════
     function getNodeCenter(nd) {
-      const bd = BLOCKS[nd.key]; if (!bd) return { x: nd.x + 70, y: nd.y + 40, b: nd.y + 80, t: nd.y };
-      if (bd.shape === 'page') return { x: nd.x + 77, y: nd.y + 40, b: nd.y + 140, t: nd.y };
-      return { x: nd.x + 38, y: nd.y + 35, b: nd.y + 74, t: nd.y };
+      const bd = BLOCKS[nd.key]; if (!bd) return { x: nd.x + 70, y: nd.y + 40, r: nd.x + 140, l: nd.x };
+      if (bd.shape === 'page') return { x: nd.x + 77, y: nd.y + 70, r: nd.x + 155, l: nd.x };
+      return { x: nd.x + 38, y: nd.y + 35, r: nd.x + 76, l: nd.x };
     }
     function drawLines(mouse) {
       const svg = document.getElementById('cvg'); svg.innerHTML = '';
@@ -4570,11 +4639,9 @@
         const tn = f.nodes.find(n => n.id === c.to);
         if (!fn || !tn) return;
         const fp = getNodeCenter(fn), tp = getNodeCenter(tn);
-        const x1 = fp.x, y1 = fp.b, x2 = tp.x, y2 = tp.t;
-        const sameRow = Math.abs(y1 - y2) < 60;
-        let d;
-        if (sameRow) { const midX = (x1 + x2) / 2; d = `M${x1},${y1} C${midX},${y1} ${midX},${y2} ${x2},${y2}`; }
-        else { const mid = (y1 + y2) / 2; d = `M${x1},${y1} C${x1},${mid} ${x2},${mid} ${x2},${y2}`; }
+        const x1 = fp.r, y1 = fp.y, x2 = tp.l, y2 = tp.y;
+        const midX = (x1 + x2) / 2;
+        const d = `M${x1},${y1} C${midX},${y1} ${midX},${y2} ${x2},${y2}`;
         const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         path.setAttribute('d', d); path.setAttribute('fill', 'none');
         path.setAttribute('stroke', '#2563eb'); path.setAttribute('stroke-width', '1.5');
@@ -4604,12 +4671,12 @@
         const fn = f.nodes.find(n => n.id === UI.connFrom);
         if (fn) {
           const fp = getNodeCenter(fn);
-          const x1 = fp.x, y1 = fp.b;
+          const x1 = fp.r, y1 = fp.y;
           const x2 = (mouse.clientX - wrap.left - UI.panX) / UI.scale;
           const y2 = (mouse.clientY - wrap.top - UI.panY) / UI.scale;
-          const mid = (y1 + y2) / 2;
+          const midX = (x1 + x2) / 2;
           const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-          path.setAttribute('d', `M${x1},${y1} C${x1},${mid} ${x2},${mid} ${x2},${y2}`);
+          path.setAttribute('d', `M${x1},${y1} C${midX},${y1} ${midX},${y2} ${x2},${y2}`);
           path.setAttribute('fill', 'none'); path.setAttribute('stroke', '#9ca3af'); path.setAttribute('stroke-width', '1.5'); path.setAttribute('stroke-dasharray', '5,4'); path.setAttribute('marker-end', 'url(#arrp)'); svg.appendChild(path);
         }
       }
@@ -5379,11 +5446,14 @@ Use no máximo 12 blocos. Aplique as regras estratégicas do seu conhecimento. C
     function applyUserColor(color) {
       _selectedUserColor = color;
       document.documentElement.style.setProperty('--user-color', color);
-      // Update all avatar backgrounds
+      // Update all avatar backgrounds (only if not showing photo)
       ['user-avatar', 'ud-avatar', 'prof-av-disp'].forEach(id => {
-        const el = document.getElementById(id); if (el) el.style.background = color;
+        const el = document.getElementById(id); if (!el) return;
+        if (!el.querySelector('img')) el.style.background = color;
       });
-      // Update draw color first swatch selection indicator
+      // Sync draw cursor color with user identity color
+      if (typeof drawState !== 'undefined') drawState.color = color;
+      // Update swatch selection
       document.querySelectorAll('.color-swatch').forEach(s => {
         s.classList.toggle('active', s.dataset.color === color);
       });
@@ -5396,7 +5466,18 @@ Use no máximo 12 blocos. Aplique as regras estratégicas do seu conhecimento. C
       const initials = session.name.split(' ').map(w => w[0] || '').join('').substring(0, 2).toUpperCase();
       const firstName = session.name.split(' ')[0];
       const avEls = [document.getElementById('user-avatar'), document.getElementById('ud-avatar'), document.getElementById('prof-av-disp')];
-      avEls.forEach(el => { if (el) { el.textContent = initials; el.style.background = _selectedUserColor; } });
+      const photo = session.photo || null;
+      avEls.forEach(el => {
+        if (!el) return;
+        if (photo) {
+          el.innerHTML = `<img src="${photo}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">`;
+          el.style.background = 'none';
+        } else {
+          el.innerHTML = '';
+          el.textContent = initials;
+          el.style.background = _selectedUserColor;
+        }
+      });
       const nd = document.getElementById('user-name-disp'); if (nd) nd.textContent = firstName;
       const un = document.getElementById('ud-name'); if (un) un.textContent = session.name;
       const ue = document.getElementById('ud-email'); if (ue) ue.textContent = session.email;
@@ -5426,6 +5507,18 @@ Use no máximo 12 blocos. Aplique as regras estratégicas do seu conhecimento. C
       document.getElementById('prof-name').value = session.name;
       document.getElementById('prof-email').value = session.email;
       document.getElementById('prof-pass').value = '';
+      window._pendingProfilePhoto = null;
+      // Show current photo in modal avatar
+      const profAv = document.getElementById('prof-av-disp');
+      if (profAv) {
+        if (session.photo) {
+          profAv.innerHTML = `<img src="${session.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">`;
+          profAv.style.background = 'none';
+        } else {
+          const initials = session.name.split(' ').map(w => w[0] || '').join('').substring(0, 2).toUpperCase();
+          profAv.innerHTML = ''; profAv.textContent = initials; profAv.style.background = _selectedUserColor;
+        }
+      }
       // Set swatches active state
       document.querySelectorAll('.color-swatch').forEach(s => {
         s.classList.toggle('active', s.dataset.color === _selectedUserColor);
@@ -5447,14 +5540,17 @@ Use no máximo 12 blocos. Aplique as regras estratégicas do seu conhecimento. C
       if (!name || !email) { toast('Preencha nome e email'); return; }
       const users = _getUsers();
       const idx = users.findIndex(u => u.id === session.id);
+      const photo = window._pendingProfilePhoto || session.photo || null;
       if (idx !== -1) {
         users[idx].name = name; users[idx].email = email.toLowerCase();
         if (pass && pass.length >= 6) users[idx].password = _hashPass(pass);
         users[idx].color = _selectedUserColor;
         users[idx].theme = themeOpt;
+        if (photo) users[idx].photo = photo;
         _saveUsers(users);
       }
-      const newSession = { ...session, name, email: email.toLowerCase(), color: _selectedUserColor };
+      window._pendingProfilePhoto = null;
+      const newSession = { ...session, name, email: email.toLowerCase(), color: _selectedUserColor, photo };
       _setSession(newSession); updateUserUI(newSession);
       applyUserTheme(themeOpt);
       closeGenModal('profile-overlay'); toast('✓ Perfil atualizado');

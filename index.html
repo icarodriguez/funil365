@@ -3097,6 +3097,10 @@
           <line x1="12" y1="15" x2="12" y2="3" />
         </svg>
       </button>
+      <button class="hbtn" onclick="saveCurrentAsTemplate()" title="Salvar funil atual como template reutilizável">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;margin-right:5px"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Salvar Template
+      </button>
       <button class="hbtn-icon" onclick="openExportModal()" title="Exportar PNG">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
           stroke-linejoin="round">
@@ -3477,6 +3481,31 @@
       </div>
       <textarea id="aig-ta"
         placeholder="Ex: Vender curso online de marketing, ticket de 497, quero usar tráfego frio levando para página de vendas e adicionando order bump checkout e upsell..."></textarea>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px">
+        <div>
+          <div style="font-size:11px;font-weight:600;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em">Ticket Médio</div>
+          <select id="aig-ticket" style="width:100%;padding:7px 9px;background:var(--bg3);border:1px solid var(--border2);border-radius:7px;color:var(--text);font-size:12px;font-family:var(--font);outline:none">
+            <option value="">Selecione...</option>
+            <option value="baixo">Baixo (até R$197)</option>
+            <option value="medio">Médio (R$197–R$997)</option>
+            <option value="alto">Alto (R$997–R$2.000)</option>
+            <option value="highticket">High Ticket (R$2.000+)</option>
+          </select>
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:600;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em">Canal Principal</div>
+          <select id="aig-canal" style="width:100%;padding:7px 9px;background:var(--bg3);border:1px solid var(--border2);border-radius:7px;color:var(--text);font-size:12px;font-family:var(--font);outline:none">
+            <option value="">Selecione...</option>
+            <option value="meta_ads">Meta Ads (Facebook/Instagram)</option>
+            <option value="google_ads">Google Ads</option>
+            <option value="organico_instagram">Instagram Orgânico</option>
+            <option value="organico_youtube">YouTube Orgânico</option>
+            <option value="tiktok">TikTok</option>
+            <option value="linkedin">LinkedIn</option>
+            <option value="email">Lista de Email</option>
+          </select>
+        </div>
+      </div>
       <div class="aig-hint">Quanto mais detalhes você fornecer, melhor será o resultado.</div>
       <div class="aig-tips">
         <div class="aig-tips-title">Dicas para melhor resultado:</div>
@@ -3731,128 +3760,446 @@
     // TEMPLATES
     // ══════════════════════════════════════════
     const TEMPLATES = {
-      // ── BÁSICOS ──
       blank: { name: 'Em branco', desc: 'Canvas limpo, comece do zero', emoji: '◻️', blocks: [] },
+
+      // ── PERPÉTUO / EVERGREEN ──
       perpetuo: {
-        name: 'Funil Perpétuo', desc: 'Funil de vendas contínuo evergreen', emoji: '♾️',
-        blocks: [{ k: 'trafego_pago', x: 40, y: 60 }, { k: 'pag_captura', x: 210, y: 30 }, { k: 'email_bv', x: 210, y: 230 }, { k: 'email_conteudo', x: 400, y: 230 }, { k: 'email_promo', x: 590, y: 230 }, { k: 'pag_vendas', x: 400, y: 30 }, { k: 'pag_pedido', x: 590, y: 30 }, { k: 'pag_obrigado', x: 780, y: 30 }, { k: 'upsell', x: 780, y: 230 }],
-        conns: [[0, 1], [1, 2], [2, 3], [3, 4], [4, 6], [1, 5], [5, 6], [6, 7], [6, 8]]
+        name: 'Funil Perpétuo', desc: 'Tráfego frio → captura → nutrição → venda sempre ativa', emoji: '♾️',
+        blocks: [
+          { k: 'trafego_pago', x: 40, y: 140 },
+          { k: 'pag_captura', x: 230, y: 140 },
+          { k: 'email_bv', x: 420, y: 240 },
+          { k: 'email_conteudo', x: 610, y: 240 },
+          { k: 'email_promo', x: 800, y: 240 },
+          { k: 'pag_vendas', x: 610, y: 60 },
+          { k: 'pag_pedido', x: 800, y: 60 },
+          { k: 'order_bump', x: 800, y: 160 },
+          { k: 'pag_obrigado', x: 990, y: 60 },
+          { k: 'upsell', x: 990, y: 240 }
+        ],
+        conns: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[6,8],[8,9]]
       },
+
+      // ── E-COMMERCE ──
       ecommerce: {
-        name: 'E-commerce', desc: 'Produto físico com order bump', emoji: '🛒',
-        blocks: [{ k: 'trafego_pago', x: 40, y: 80 }, { k: 'landing_page', x: 220, y: 50 }, { k: 'pag_pedido', x: 450, y: 50 }, { k: 'order_bump', x: 450, y: 240 }, { k: 'pag_obrigado', x: 680, y: 50 }, { k: 'upsell', x: 680, y: 240 }, { k: 'area_membros', x: 910, y: 50 }, { k: 'email_bv', x: 220, y: 240 }],
-        conns: [[0, 1], [1, 2], [2, 3], [2, 4], [3, 4], [4, 5], [4, 6], [1, 7]]
+        name: 'E-commerce com Order Bump', desc: 'Produto físico ou digital com maximização de receita no checkout', emoji: '🛒',
+        blocks: [
+          { k: 'trafego_pago', x: 40, y: 140 },
+          { k: 'criativo_img', x: 230, y: 60 },
+          { k: 'criativo_vid', x: 230, y: 220 },
+          { k: 'landing_page', x: 420, y: 140 },
+          { k: 'pag_pedido', x: 610, y: 140 },
+          { k: 'order_bump', x: 610, y: 280 },
+          { k: 'pag_obrigado', x: 800, y: 140 },
+          { k: 'upsell', x: 800, y: 280 },
+          { k: 'downsell', x: 990, y: 280 },
+          { k: 'email_bv', x: 990, y: 140 }
+        ],
+        conns: [[0,1],[0,2],[1,3],[2,3],[3,4],[4,5],[4,6],[5,6],[6,7],[7,8],[6,9]]
       },
-      // ── FUNIL365 TEMPLATES ──
-      story365: {
-        name: 'STORY365 - Sequência', desc: 'Storytelling com Stories para oferta direta', emoji: '📱',
-        blocks: [{ k: 'instagram', x: 40, y: 150 }, { k: 'criativo_vid', x: 220, y: 60 }, { k: 'criativo_img', x: 220, y: 240 }, { k: 'pag_captura', x: 420, y: 150 }, { k: 'email_bv', x: 600, y: 240 }, { k: 'email_conteudo', x: 780, y: 240 }, { k: 'email_promo', x: 960, y: 240 }, { k: 'pag_vendas', x: 600, y: 60 }, { k: 'pag_pedido', x: 780, y: 60 }, { k: 'pag_obrigado', x: 960, y: 60 }],
-        conns: [[0, 1], [0, 2], [1, 3], [2, 3], [3, 4], [3, 7], [4, 5], [5, 6], [6, 7], [7, 8], [8, 9]]
-      },
-      webinario_mentoria: {
-        name: 'Webinário + Mentoria', desc: 'Venda sua mentoria através de Webinários', emoji: '🎓',
-        blocks: [{ k: 'trafego_pago', x: 40, y: 60 }, { k: 'trafego_organico', x: 40, y: 240 }, { k: 'pag_captura', x: 220, y: 150 }, { k: 'email_bv', x: 400, y: 240 }, { k: 'webinar', x: 400, y: 60 }, { k: 'email_conteudo', x: 580, y: 240 }, { k: 'pag_vendas_vsl', x: 580, y: 60 }, { k: 'whatsapp', x: 760, y: 240 }, { k: 'pag_pedido', x: 760, y: 60 }, { k: 'pag_obrigado', x: 940, y: 60 }, { k: 'upsell', x: 940, y: 240 }],
-        conns: [[0, 2], [1, 2], [2, 3], [2, 4], [3, 5], [4, 6], [5, 6], [6, 7], [6, 8], [7, 8], [8, 9], [8, 10]]
-      },
-      captacao_leads: {
-        name: 'Captação de Leads', desc: 'Funil direto de captura de leads qualificados', emoji: '🎯',
-        blocks: [{ k: 'trafego_pago', x: 40, y: 60 }, { k: 'trafego_organico', x: 40, y: 240 }, { k: 'pag_captura', x: 220, y: 150 }, { k: 'pag_obrigado', x: 420, y: 60 }, { k: 'email_bv', x: 420, y: 240 }, { k: 'email_conteudo', x: 600, y: 240 }, { k: 'whatsapp', x: 600, y: 60 }],
-        conns: [[0, 2], [1, 2], [2, 3], [2, 4], [3, 6], [4, 5], [5, 6]]
-      },
-      anuncio: {
-        name: 'Anúncio', desc: 'Funil direto via anúncio para venda', emoji: '📢',
-        blocks: [{ k: 'trafego_pago', x: 40, y: 150 }, { k: 'criativo_img', x: 220, y: 60 }, { k: 'criativo_vid', x: 220, y: 240 }, { k: 'landing_page', x: 420, y: 150 }, { k: 'pag_vendas', x: 600, y: 60 }, { k: 'pag_pedido', x: 780, y: 60 }, { k: 'pag_obrigado', x: 960, y: 60 }, { k: 'order_bump', x: 780, y: 240 }, { k: 'upsell', x: 960, y: 240 }],
-        conns: [[0, 1], [0, 2], [1, 3], [2, 3], [3, 4], [4, 5], [5, 6], [5, 7], [7, 6], [6, 8]]
-      },
-      nutricao_russel: {
-        name: 'Nutrição (Russel)', desc: 'Funil de nutrição no modelo Russell Brunson', emoji: '🌱',
-        blocks: [{ k: 'trafego_organico', x: 40, y: 150 }, { k: 'pag_captura', x: 220, y: 150 }, { k: 'email_bv', x: 420, y: 240 }, { k: 'email_conteudo', x: 600, y: 240 }, { k: 'email_conteudo', x: 780, y: 240 }, { k: 'email_promo', x: 960, y: 240 }, { k: 'pag_vendas', x: 600, y: 60 }, { k: 'pag_pedido', x: 780, y: 60 }, { k: 'pag_obrigado', x: 960, y: 60 }, { k: 'upsell', x: 1140, y: 60 }, { k: 'downsell', x: 1140, y: 240 }],
-        conns: [[0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [3, 6], [6, 7], [7, 8], [8, 9], [8, 10]]
-      },
-      email_russel: {
-        name: 'Email (Russel)', desc: 'Sequência de emails modelo Russell Brunson', emoji: '📧',
-        blocks: [{ k: 'pag_captura', x: 40, y: 150 }, { k: 'email_bv', x: 220, y: 240 }, { k: 'email_conteudo', x: 420, y: 240 }, { k: 'email_promo', x: 600, y: 240 }, { k: 'pag_vendas', x: 420, y: 60 }, { k: 'pag_pedido', x: 600, y: 60 }, { k: 'pag_obrigado', x: 780, y: 60 }],
-        conns: [[0, 1], [1, 2], [2, 3], [3, 4], [2, 4], [4, 5], [5, 6]]
-      },
-      distribuicao: {
-        name: 'Distribuição de Conteúdo', desc: 'Multi-canal de distribuição de conteúdo', emoji: '📡',
-        blocks: [{ k: 'trafego_organico', x: 40, y: 150 }, { k: 'youtube', x: 220, y: 40 }, { k: 'instagram', x: 220, y: 150 }, { k: 'tiktok', x: 220, y: 260 }, { k: 'pag_captura', x: 440, y: 150 }, { k: 'email_bv', x: 620, y: 240 }, { k: 'email_conteudo', x: 800, y: 240 }, { k: 'whatsapp', x: 620, y: 60 }],
-        conns: [[0, 1], [0, 2], [0, 3], [1, 4], [2, 4], [3, 4], [4, 5], [4, 7], [5, 6]]
-      },
-      whatsapp_transmissao: {
-        name: 'Whatsapp Transmissão/Nutrição', desc: 'Nutrição de leads via WhatsApp broadcast', emoji: '📲',
-        blocks: [{ k: 'trafego_pago', x: 40, y: 60 }, { k: 'pag_captura', x: 220, y: 60 }, { k: 'whatsapp', x: 420, y: 60 }, { k: 'email_bv', x: 420, y: 240 }, { k: 'email_conteudo', x: 600, y: 240 }, { k: 'email_promo', x: 780, y: 240 }, { k: 'pag_vendas', x: 600, y: 60 }, { k: 'pag_pedido', x: 780, y: 60 }, { k: 'pag_obrigado', x: 960, y: 60 }],
-        conns: [[0, 1], [1, 2], [1, 3], [2, 6], [3, 4], [4, 5], [5, 6], [6, 7], [7, 8]]
-      },
-      whatsapp_11: {
-        name: 'Whatsapp 1:1', desc: 'Atendimento consultivo via WhatsApp direto', emoji: '💬',
-        blocks: [{ k: 'instagram', x: 40, y: 60 }, { k: 'facebook', x: 40, y: 240 }, { k: 'whatsapp', x: 220, y: 150 }, { k: 'condicional', x: 420, y: 150 }, { k: 'pag_vendas_vsl', x: 600, y: 60 }, { k: 'pag_pedido', x: 780, y: 60 }, { k: 'pag_obrigado', x: 960, y: 60 }, { k: 'downsell', x: 600, y: 240 }],
-        conns: [[0, 2], [1, 2], [2, 3], [3, 4], [3, 7], [4, 5], [5, 6]]
-      },
-      dm_instagram: {
-        name: 'DM Instagram', desc: 'Funil de vendas pelo Direct do Instagram', emoji: '✉️',
-        blocks: [{ k: 'instagram', x: 40, y: 150 }, { k: 'criativo_vid', x: 220, y: 60 }, { k: 'criativo_img', x: 220, y: 240 }, { k: 'whatsapp', x: 420, y: 150 }, { k: 'pag_vendas', x: 600, y: 60 }, { k: 'pag_pedido', x: 780, y: 60 }, { k: 'pag_obrigado', x: 960, y: 60 }],
-        conns: [[0, 1], [0, 2], [1, 3], [2, 3], [3, 4], [4, 5], [5, 6]]
-      },
-      checklist_oto: {
-        name: 'Checklist + One Time Offer', desc: 'Lead magnet com oferta única na entrega', emoji: '✅',
-        blocks: [{ k: 'trafego_pago', x: 40, y: 150 }, { k: 'pag_captura', x: 220, y: 150 }, { k: 'pag_obrigado', x: 420, y: 60 }, { k: 'upsell', x: 600, y: 60 }, { k: 'email_bv', x: 420, y: 240 }, { k: 'email_conteudo', x: 600, y: 240 }, { k: 'email_promo', x: 780, y: 240 }, { k: 'pag_vendas', x: 780, y: 60 }, { k: 'pag_pedido', x: 960, y: 60 }],
-        conns: [[0, 1], [1, 2], [2, 3], [2, 4], [3, 7], [4, 5], [5, 6], [6, 7], [7, 8]]
-      },
-      ligacao: {
-        name: 'Ligação', desc: 'Funil de vendas por ligação ou call consultivo', emoji: '📞',
-        blocks: [{ k: 'trafego_pago', x: 40, y: 150 }, { k: 'pag_captura', x: 220, y: 150 }, { k: 'pag_vendas_vsl', x: 420, y: 60 }, { k: 'email_bv', x: 420, y: 240 }, { k: 'whatsapp', x: 600, y: 150 }, { k: 'pag_pedido', x: 780, y: 60 }, { k: 'pag_obrigado', x: 960, y: 60 }],
-        conns: [[0, 1], [1, 2], [1, 3], [2, 4], [3, 4], [4, 5], [5, 6]]
-      },
-      lancamento_pago: {
-        name: 'Lançamento Pago', desc: 'Lançamento via anúncios pagos com webinar', emoji: '🚀',
-        blocks: [{ k: 'trafego_pago', x: 40, y: 150 }, { k: 'pag_captura', x: 220, y: 150 }, { k: 'email_bv', x: 420, y: 240 }, { k: 'webinar', x: 420, y: 60 }, { k: 'email_conteudo', x: 600, y: 240 }, { k: 'email_promo', x: 780, y: 240 }, { k: 'pag_vendas', x: 600, y: 60 }, { k: 'pag_pedido', x: 780, y: 60 }, { k: 'pag_obrigado', x: 960, y: 60 }, { k: 'upsell', x: 960, y: 240 }],
-        conns: [[0, 1], [1, 2], [1, 3], [2, 4], [3, 6], [4, 5], [5, 6], [6, 7], [7, 8], [8, 9]]
-      },
+
+      // ── HIGH TICKET ──
       high_ticket: {
-        name: 'High Ticket', desc: 'Funil de vendas para alto valor / mentoria elite', emoji: '💎',
-        blocks: [{ k: 'trafego_pago', x: 40, y: 60 }, { k: 'linkedin', x: 40, y: 240 }, { k: 'pag_captura', x: 220, y: 150 }, { k: 'pag_vendas_vsl', x: 420, y: 60 }, { k: 'email_bv', x: 420, y: 240 }, { k: 'whatsapp', x: 600, y: 150 }, { k: 'pag_pedido', x: 780, y: 60 }, { k: 'pag_obrigado', x: 960, y: 60 }],
-        conns: [[0, 2], [1, 2], [2, 3], [2, 4], [3, 5], [4, 5], [5, 6], [6, 7]]
+        name: 'High Ticket Consultivo', desc: 'Nunca venda direto: qualifique via VSL → WhatsApp → call consultiva', emoji: '💎',
+        blocks: [
+          { k: 'trafego_pago', x: 40, y: 60 },
+          { k: 'linkedin', x: 40, y: 240 },
+          { k: 'pag_captura', x: 230, y: 150 },
+          { k: 'email_bv', x: 420, y: 240 },
+          { k: 'pag_vendas_vsl', x: 420, y: 60 },
+          { k: 'whatsapp', x: 610, y: 150 },
+          { k: 'condicional', x: 800, y: 150 },
+          { k: 'pag_pedido', x: 990, y: 60 },
+          { k: 'pag_obrigado', x: 1180, y: 60 },
+          { k: 'email_conteudo', x: 990, y: 240 }
+        ],
+        conns: [[0,2],[1,2],[2,3],[2,4],[3,5],[4,5],[5,6],[6,7],[7,8],[6,9]]
       },
-      webinario: {
-        name: 'Webinário', desc: 'Funil completo de vendas via webinar ao vivo', emoji: '🖥️',
-        blocks: [{ k: 'trafego_pago', x: 40, y: 150 }, { k: 'pag_captura', x: 220, y: 150 }, { k: 'email_bv', x: 420, y: 240 }, { k: 'webinar', x: 420, y: 60 }, { k: 'email_conteudo', x: 600, y: 240 }, { k: 'pag_vendas', x: 600, y: 60 }, { k: 'email_promo', x: 780, y: 240 }, { k: 'pag_pedido', x: 780, y: 60 }, { k: 'pag_obrigado', x: 960, y: 60 }, { k: 'upsell', x: 960, y: 240 }],
-        conns: [[0, 1], [1, 2], [1, 3], [2, 4], [3, 5], [4, 5], [5, 6], [5, 7], [6, 7], [7, 8], [8, 9]]
-      },
-      story_ads: {
-        name: 'Story / Story Ads', desc: 'Funil via Stories orgânicos e anúncios de Stories', emoji: '🎬',
-        blocks: [{ k: 'instagram', x: 40, y: 60 }, { k: 'criativo_vid', x: 220, y: 60 }, { k: 'criativo_img', x: 220, y: 240 }, { k: 'pag_captura', x: 420, y: 150 }, { k: 'email_bv', x: 600, y: 240 }, { k: 'pag_vendas', x: 600, y: 60 }, { k: 'pag_pedido', x: 780, y: 60 }],
-        conns: [[0, 1], [0, 2], [1, 3], [2, 3], [3, 4], [3, 5], [4, 5], [5, 6]]
-      },
-      lancamento: {
-        name: 'Lançamento Tradicional', desc: 'CPL + Webinar + Sequência completa de lançamento', emoji: '🔥',
-        blocks: [{ k: 'trafego_pago', x: 40, y: 60 }, { k: 'trafego_organico', x: 40, y: 240 }, { k: 'pag_captura', x: 220, y: 150 }, { k: 'email_bv', x: 420, y: 240 }, { k: 'email_conteudo', x: 600, y: 240 }, { k: 'email_promo', x: 780, y: 240 }, { k: 'webinar', x: 420, y: 60 }, { k: 'pag_vendas', x: 600, y: 60 }, { k: 'pag_pedido', x: 780, y: 60 }, { k: 'pag_obrigado', x: 960, y: 60 }, { k: 'upsell', x: 960, y: 240 }, { k: 'downsell', x: 1140, y: 240 }, { k: 'area_membros', x: 1140, y: 60 }],
-        conns: [[0, 2], [1, 2], [2, 3], [2, 6], [3, 4], [4, 5], [5, 7], [6, 7], [7, 8], [8, 9], [9, 10], [9, 11], [9, 12]]
-      },
-      dominio_instagram: {
-        name: 'Domínio (Instagram)', desc: 'Estratégia de funil para domínio de audiência no Instagram', emoji: '👑',
-        blocks: [{ k: 'instagram', x: 40, y: 150 }, { k: 'criativo_vid', x: 220, y: 60 }, { k: 'criativo_img', x: 220, y: 240 }, { k: 'pag_captura', x: 420, y: 150 }, { k: 'email_bv', x: 600, y: 240 }, { k: 'whatsapp', x: 600, y: 60 }],
-        conns: [[0, 1], [0, 2], [1, 3], [2, 3], [3, 4], [3, 5], [4, 5]]
-      },
-      ld1: {
-        name: 'Lançamento de 1 dia - LD1™', desc: 'Lançamento completo executado em apenas 1 dia', emoji: '⚡',
-        blocks: [{ k: 'trafego_pago', x: 40, y: 60 }, { k: 'instagram', x: 40, y: 240 }, { k: 'email_bv', x: 220, y: 150 }, { k: 'email_conteudo', x: 420, y: 240 }, { k: 'email_promo', x: 600, y: 240 }, { k: 'webinar', x: 420, y: 60 }, { k: 'pag_vendas_vsl', x: 600, y: 60 }, { k: 'pag_pedido', x: 780, y: 60 }, { k: 'pag_obrigado', x: 960, y: 60 }, { k: 'upsell', x: 960, y: 240 }],
-        conns: [[0, 2], [1, 2], [2, 3], [2, 5], [3, 4], [4, 6], [5, 6], [6, 7], [7, 8], [8, 9]]
-      },
-      grupo_vip: {
-        name: 'Grupo VIP (Whatsapp)', desc: 'Funil de vendas via grupo VIP no WhatsApp', emoji: '🔐',
-        blocks: [{ k: 'trafego_pago', x: 40, y: 60 }, { k: 'instagram', x: 40, y: 240 }, { k: 'pag_captura', x: 220, y: 150 }, { k: 'whatsapp', x: 420, y: 150 }, { k: 'email_bv', x: 600, y: 240 }, { k: 'email_conteudo', x: 780, y: 240 }, { k: 'pag_vendas', x: 600, y: 60 }, { k: 'pag_pedido', x: 780, y: 60 }, { k: 'pag_obrigado', x: 960, y: 60 }],
-        conns: [[0, 2], [1, 2], [2, 3], [3, 4], [3, 6], [4, 5], [5, 6], [6, 7], [7, 8]]
-      },
-      lancamento_trad: {
-        name: 'Lançamento Tradicional (Fórmula)', desc: 'Fórmula completa de lançamento com CPL e abertura de carrinho', emoji: '🏆',
-        blocks: [{ k: 'trafego_pago', x: 40, y: 60 }, { k: 'trafego_organico', x: 40, y: 240 }, { k: 'pag_captura', x: 220, y: 150 }, { k: 'email_bv', x: 420, y: 240 }, { k: 'email_conteudo', x: 600, y: 240 }, { k: 'email_conteudo', x: 780, y: 240 }, { k: 'email_promo', x: 960, y: 240 }, { k: 'webinar', x: 420, y: 60 }, { k: 'pag_vendas', x: 600, y: 60 }, { k: 'pag_pedido', x: 780, y: 60 }, { k: 'pag_obrigado', x: 960, y: 60 }, { k: 'upsell', x: 1140, y: 60 }, { k: 'downsell', x: 1140, y: 240 }],
-        conns: [[0, 2], [1, 2], [2, 3], [2, 7], [3, 4], [4, 5], [5, 6], [6, 8], [7, 8], [8, 9], [9, 10], [10, 11], [10, 12]]
-      },
+
+      // ── MENTORIA ──
       mentoria: {
-        name: 'Mentoria / High Ticket Consultivo', desc: 'Qualificação consultiva para venda premium', emoji: '🎯',
-        blocks: [{ k: 'trafego_pago', x: 40, y: 80 }, { k: 'pag_captura', x: 220, y: 50 }, { k: 'pag_vendas_vsl', x: 430, y: 50 }, { k: 'whatsapp', x: 430, y: 240 }, { k: 'pag_pedido', x: 640, y: 50 }, { k: 'pag_obrigado', x: 850, y: 50 }, { k: 'email_bv', x: 220, y: 240 }, { k: 'email_conteudo', x: 640, y: 240 }],
-        conns: [[0, 1], [1, 2], [2, 3], [2, 4], [3, 4], [4, 5], [1, 6], [6, 7], [7, 4]]
+        name: 'Mentoria / Programa Premium', desc: 'VSL de qualificação → WhatsApp → call de vendas → matrícula', emoji: '🎯',
+        blocks: [
+          { k: 'trafego_pago', x: 40, y: 150 },
+          { k: 'pag_captura', x: 230, y: 150 },
+          { k: 'pag_vendas_vsl', x: 420, y: 60 },
+          { k: 'email_bv', x: 420, y: 240 },
+          { k: 'email_conteudo', x: 610, y: 240 },
+          { k: 'whatsapp', x: 610, y: 60 },
+          { k: 'condicional', x: 800, y: 60 },
+          { k: 'pag_pedido', x: 990, y: 60 },
+          { k: 'pag_obrigado', x: 1180, y: 60 },
+          { k: 'downsell', x: 990, y: 240 }
+        ],
+        conns: [[0,1],[1,2],[1,3],[2,5],[3,4],[4,5],[5,6],[6,7],[7,8],[6,9]]
+      },
+
+      // ── LANÇAMENTO TRADICIONAL ──
+      lancamento: {
+        name: 'Lançamento Tradicional', desc: 'CPL → aquecimento → webinar → abertura de carrinho → upsell', emoji: '🔥',
+        blocks: [
+          { k: 'trafego_pago', x: 40, y: 60 },
+          { k: 'trafego_organico', x: 40, y: 240 },
+          { k: 'pag_captura', x: 230, y: 150 },
+          { k: 'email_bv', x: 420, y: 240 },
+          { k: 'email_conteudo', x: 610, y: 240 },
+          { k: 'email_conteudo', x: 800, y: 240 },
+          { k: 'webinar', x: 420, y: 60 },
+          { k: 'email_promo', x: 990, y: 240 },
+          { k: 'pag_vendas', x: 610, y: 60 },
+          { k: 'pag_pedido', x: 800, y: 60 },
+          { k: 'pag_obrigado', x: 990, y: 60 },
+          { k: 'upsell', x: 1180, y: 60 },
+          { k: 'downsell', x: 1180, y: 240 },
+          { k: 'area_membros', x: 1370, y: 60 }
+        ],
+        conns: [[0,2],[1,2],[2,3],[2,6],[3,4],[4,5],[5,7],[6,8],[7,8],[8,9],[9,10],[10,11],[10,12],[11,13]]
+      },
+
+      // ── LANÇAMENTO DE 1 DIA ──
+      ld1: {
+        name: 'Lançamento de 1 Dia — LD1™', desc: 'Webinar ao vivo + abertura de carrinho no mesmo dia', emoji: '⚡',
+        blocks: [
+          { k: 'trafego_pago', x: 40, y: 60 },
+          { k: 'instagram', x: 40, y: 240 },
+          { k: 'pag_captura', x: 230, y: 150 },
+          { k: 'email_bv', x: 420, y: 240 },
+          { k: 'webinar', x: 420, y: 60 },
+          { k: 'email_conteudo', x: 610, y: 240 },
+          { k: 'pag_vendas_vsl', x: 610, y: 60 },
+          { k: 'email_promo', x: 800, y: 240 },
+          { k: 'pag_pedido', x: 800, y: 60 },
+          { k: 'pag_obrigado', x: 990, y: 60 },
+          { k: 'upsell', x: 990, y: 240 }
+        ],
+        conns: [[0,2],[1,2],[2,3],[2,4],[3,5],[4,6],[5,7],[6,8],[7,6],[8,9],[9,10]]
+      },
+
+      // ── WEBINÁRIO ──
+      webinario: {
+        name: 'Webinário de Vendas', desc: 'Aquecimento por email → evento → pitch ao vivo → carrinho', emoji: '🖥️',
+        blocks: [
+          { k: 'trafego_pago', x: 40, y: 150 },
+          { k: 'pag_captura', x: 230, y: 150 },
+          { k: 'email_bv', x: 420, y: 240 },
+          { k: 'email_conteudo', x: 610, y: 240 },
+          { k: 'webinar', x: 420, y: 60 },
+          { k: 'email_promo', x: 800, y: 240 },
+          { k: 'pag_vendas', x: 610, y: 60 },
+          { k: 'pag_pedido', x: 800, y: 60 },
+          { k: 'pag_obrigado', x: 990, y: 60 },
+          { k: 'upsell', x: 990, y: 240 },
+          { k: 'downsell', x: 1180, y: 240 }
+        ],
+        conns: [[0,1],[1,2],[1,4],[2,3],[3,5],[4,6],[5,6],[6,7],[7,8],[8,9],[9,10]]
+      },
+
+      // ── WEBINÁRIO + MENTORIA ──
+      webinario_mentoria: {
+        name: 'Webinário + Mentoria', desc: 'Webinar como qualificador para programa de mentoria', emoji: '🎓',
+        blocks: [
+          { k: 'trafego_pago', x: 40, y: 60 },
+          { k: 'trafego_organico', x: 40, y: 240 },
+          { k: 'pag_captura', x: 230, y: 150 },
+          { k: 'email_bv', x: 420, y: 240 },
+          { k: 'webinar', x: 420, y: 60 },
+          { k: 'email_conteudo', x: 610, y: 240 },
+          { k: 'pag_vendas_vsl', x: 610, y: 60 },
+          { k: 'whatsapp', x: 800, y: 150 },
+          { k: 'pag_pedido', x: 990, y: 60 },
+          { k: 'pag_obrigado', x: 1180, y: 60 },
+          { k: 'upsell', x: 1180, y: 240 }
+        ],
+        conns: [[0,2],[1,2],[2,3],[2,4],[3,5],[4,6],[5,6],[6,7],[7,8],[8,9],[8,10]]
+      },
+
+      // ── CAPTAÇÃO DE LEADS ──
+      captacao_leads: {
+        name: 'Captação de Leads', desc: 'Isca digital → captura → nutrição → qualificação via WhatsApp', emoji: '🎣',
+        blocks: [
+          { k: 'trafego_pago', x: 40, y: 60 },
+          { k: 'trafego_organico', x: 40, y: 240 },
+          { k: 'criativo_img', x: 230, y: 60 },
+          { k: 'criativo_vid', x: 230, y: 240 },
+          { k: 'pag_captura', x: 420, y: 150 },
+          { k: 'pag_obrigado', x: 610, y: 60 },
+          { k: 'email_bv', x: 610, y: 240 },
+          { k: 'email_conteudo', x: 800, y: 240 },
+          { k: 'whatsapp', x: 800, y: 60 },
+          { k: 'email_promo', x: 990, y: 240 }
+        ],
+        conns: [[0,2],[0,3],[1,2],[1,3],[2,4],[3,4],[4,5],[4,6],[5,8],[6,7],[7,9],[9,8]]
+      },
+
+      // ── NUTRIÇÃO RUSSELL BRUNSON ──
+      nutricao_russel: {
+        name: 'Nutrição (Modelo Brunson)', desc: 'Sequência de valor antes de qualquer oferta — builds authority first', emoji: '🌱',
+        blocks: [
+          { k: 'trafego_organico', x: 40, y: 150 },
+          { k: 'pag_captura', x: 230, y: 150 },
+          { k: 'email_bv', x: 420, y: 240 },
+          { k: 'email_conteudo', x: 610, y: 240 },
+          { k: 'email_conteudo', x: 800, y: 240 },
+          { k: 'email_promo', x: 990, y: 240 },
+          { k: 'pag_vendas', x: 610, y: 60 },
+          { k: 'pag_pedido', x: 800, y: 60 },
+          { k: 'pag_obrigado', x: 990, y: 60 },
+          { k: 'upsell', x: 1180, y: 60 },
+          { k: 'downsell', x: 1180, y: 240 }
+        ],
+        conns: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[3,6],[6,7],[7,8],[8,9],[8,10]]
+      },
+
+      // ── FUNIL DE ANÚNCIO DIRETO ──
+      anuncio: {
+        name: 'Anúncio Direto para Venda', desc: 'Criativo → landing page → checkout — para produtos de ticket médio', emoji: '📢',
+        blocks: [
+          { k: 'trafego_pago', x: 40, y: 150 },
+          { k: 'criativo_vid', x: 230, y: 60 },
+          { k: 'criativo_img', x: 230, y: 240 },
+          { k: 'landing_page', x: 420, y: 150 },
+          { k: 'pag_vendas', x: 610, y: 60 },
+          { k: 'pag_pedido', x: 800, y: 60 },
+          { k: 'order_bump', x: 800, y: 200 },
+          { k: 'pag_obrigado', x: 990, y: 60 },
+          { k: 'upsell', x: 990, y: 240 },
+          { k: 'email_bv', x: 610, y: 240 }
+        ],
+        conns: [[0,1],[0,2],[1,3],[2,3],[3,4],[4,5],[5,6],[5,7],[6,7],[7,8],[3,9]]
+      },
+
+      // ── STORY365 ──
+      story365: {
+        name: 'STORY365 — Sequência de Stories', desc: 'Storytelling via stories → captura → nutrição → venda', emoji: '📱',
+        blocks: [
+          { k: 'instagram', x: 40, y: 150 },
+          { k: 'criativo_vid', x: 230, y: 60 },
+          { k: 'criativo_img', x: 230, y: 240 },
+          { k: 'pag_captura', x: 420, y: 150 },
+          { k: 'email_bv', x: 610, y: 240 },
+          { k: 'email_conteudo', x: 800, y: 240 },
+          { k: 'email_promo', x: 990, y: 240 },
+          { k: 'pag_vendas', x: 610, y: 60 },
+          { k: 'pag_pedido', x: 800, y: 60 },
+          { k: 'pag_obrigado', x: 990, y: 60 }
+        ],
+        conns: [[0,1],[0,2],[1,3],[2,3],[3,4],[3,7],[4,5],[5,6],[6,7],[7,8],[8,9]]
+      },
+
+      // ── DM INSTAGRAM ──
+      dm_instagram: {
+        name: 'DM Instagram', desc: 'Criativo orgânico → engajamento → DM qualificador → venda', emoji: '✉️',
+        blocks: [
+          { k: 'instagram', x: 40, y: 150 },
+          { k: 'criativo_vid', x: 230, y: 60 },
+          { k: 'criativo_img', x: 230, y: 240 },
+          { k: 'manychat', x: 420, y: 150 },
+          { k: 'condicional', x: 610, y: 150 },
+          { k: 'whatsapp', x: 800, y: 60 },
+          { k: 'pag_vendas_vsl', x: 800, y: 240 },
+          { k: 'pag_pedido', x: 990, y: 60 },
+          { k: 'pag_obrigado', x: 1180, y: 60 }
+        ],
+        conns: [[0,1],[0,2],[1,3],[2,3],[3,4],[4,5],[4,6],[5,7],[6,7],[7,8]]
+      },
+
+      // ── WHATSAPP TRANSMISSÃO ──
+      whatsapp_transmissao: {
+        name: 'WhatsApp Transmissão / Nutrição', desc: 'Lista de broadcast para nutrição e venda direta', emoji: '📲',
+        blocks: [
+          { k: 'trafego_pago', x: 40, y: 150 },
+          { k: 'pag_captura', x: 230, y: 150 },
+          { k: 'whatsapp', x: 420, y: 60 },
+          { k: 'email_bv', x: 420, y: 240 },
+          { k: 'email_conteudo', x: 610, y: 240 },
+          { k: 'email_promo', x: 800, y: 240 },
+          { k: 'pag_vendas', x: 610, y: 60 },
+          { k: 'pag_pedido', x: 800, y: 60 },
+          { k: 'pag_obrigado', x: 990, y: 60 },
+          { k: 'upsell', x: 990, y: 240 }
+        ],
+        conns: [[0,1],[1,2],[1,3],[2,6],[3,4],[4,5],[5,6],[6,7],[7,8],[8,9]]
+      },
+
+      // ── WHATSAPP 1:1 ──
+      whatsapp_11: {
+        name: 'WhatsApp 1:1 Consultivo', desc: 'Atendimento individual para qualificação e fechamento de venda', emoji: '💬',
+        blocks: [
+          { k: 'instagram', x: 40, y: 60 },
+          { k: 'facebook', x: 40, y: 240 },
+          { k: 'whatsapp', x: 230, y: 150 },
+          { k: 'condicional', x: 420, y: 150 },
+          { k: 'pag_vendas_vsl', x: 610, y: 60 },
+          { k: 'pag_pedido', x: 800, y: 60 },
+          { k: 'pag_obrigado', x: 990, y: 60 },
+          { k: 'downsell', x: 610, y: 240 },
+          { k: 'email_bv', x: 800, y: 240 }
+        ],
+        conns: [[0,2],[1,2],[2,3],[3,4],[3,7],[4,5],[5,6],[7,8]]
+      },
+
+      // ── CHECKLIST + OTO ──
+      checklist_oto: {
+        name: 'Checklist + One Time Offer', desc: 'Lead magnet gratuito → oferta única na entrega (OTO) → sequência de emails', emoji: '✅',
+        blocks: [
+          { k: 'trafego_pago', x: 40, y: 150 },
+          { k: 'pag_captura', x: 230, y: 150 },
+          { k: 'pag_obrigado', x: 420, y: 60 },
+          { k: 'upsell', x: 610, y: 60 },
+          { k: 'email_bv', x: 420, y: 240 },
+          { k: 'email_conteudo', x: 610, y: 240 },
+          { k: 'email_promo', x: 800, y: 240 },
+          { k: 'pag_vendas', x: 800, y: 60 },
+          { k: 'pag_pedido', x: 990, y: 60 },
+          { k: 'pag_obrigado_count', x: 1180, y: 60 }
+        ],
+        conns: [[0,1],[1,2],[2,3],[2,4],[3,7],[4,5],[5,6],[6,7],[7,8],[8,9]]
+      },
+
+      // ── DISTRIBUIÇÃO DE CONTEÚDO ──
+      distribuicao: {
+        name: 'Distribuição Multi-Canal', desc: 'Um conteúdo distribuído em múltiplos canais → captura centralizada', emoji: '📡',
+        blocks: [
+          { k: 'trafego_organico', x: 40, y: 150 },
+          { k: 'youtube', x: 230, y: 40 },
+          { k: 'instagram', x: 230, y: 150 },
+          { k: 'tiktok', x: 230, y: 260 },
+          { k: 'pag_captura', x: 420, y: 150 },
+          { k: 'email_bv', x: 610, y: 240 },
+          { k: 'email_conteudo', x: 800, y: 240 },
+          { k: 'email_promo', x: 990, y: 240 },
+          { k: 'whatsapp', x: 610, y: 60 },
+          { k: 'pag_vendas', x: 800, y: 60 }
+        ],
+        conns: [[0,1],[0,2],[0,3],[1,4],[2,4],[3,4],[4,5],[4,8],[5,6],[6,7],[7,9],[8,9]]
+      },
+
+      // ── EMAIL RUSSELL BRUNSON ──
+      email_russel: {
+        name: 'Sequência Email (Brunson)', desc: '7 emails de value antes de qualquer pitch — metodologia Soap Opera', emoji: '📧',
+        blocks: [
+          { k: 'pag_captura', x: 40, y: 150 },
+          { k: 'email_bv', x: 230, y: 240 },
+          { k: 'email_conteudo', x: 420, y: 240 },
+          { k: 'email_conteudo', x: 610, y: 240 },
+          { k: 'email_conteudo', x: 800, y: 240 },
+          { k: 'email_promo', x: 990, y: 240 },
+          { k: 'pag_vendas', x: 420, y: 60 },
+          { k: 'pag_pedido', x: 610, y: 60 },
+          { k: 'pag_obrigado', x: 800, y: 60 },
+          { k: 'upsell', x: 990, y: 60 }
+        ],
+        conns: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[2,6],[6,7],[7,8],[8,9]]
+      },
+
+      // ── DOMÍNIO INSTAGRAM ──
+      dominio_instagram: {
+        name: 'Domínio Instagram', desc: 'Estratégia de audiência orgânica no Instagram → lista própria', emoji: '👑',
+        blocks: [
+          { k: 'instagram', x: 40, y: 150 },
+          { k: 'criativo_vid', x: 230, y: 60 },
+          { k: 'criativo_img', x: 230, y: 240 },
+          { k: 'manychat', x: 420, y: 150 },
+          { k: 'pag_captura', x: 610, y: 150 },
+          { k: 'email_bv', x: 800, y: 240 },
+          { k: 'whatsapp', x: 800, y: 60 },
+          { k: 'email_conteudo', x: 990, y: 240 }
+        ],
+        conns: [[0,1],[0,2],[1,3],[2,3],[3,4],[4,5],[4,6],[5,7]]
+      },
+
+      // ── LIGAÇÃO / CALL BOOK ──
+      ligacao: {
+        name: 'Ligação / Agendamento de Call', desc: 'Captação → qualificação → agendamento de call consultiva → fechamento', emoji: '📞',
+        blocks: [
+          { k: 'trafego_pago', x: 40, y: 150 },
+          { k: 'pag_captura', x: 230, y: 150 },
+          { k: 'pag_vendas_vsl', x: 420, y: 60 },
+          { k: 'email_bv', x: 420, y: 240 },
+          { k: 'email_conteudo', x: 610, y: 240 },
+          { k: 'whatsapp', x: 610, y: 60 },
+          { k: 'condicional', x: 800, y: 60 },
+          { k: 'pag_pedido', x: 990, y: 60 },
+          { k: 'pag_obrigado', x: 1180, y: 60 },
+          { k: 'downsell', x: 990, y: 240 }
+        ],
+        conns: [[0,1],[1,2],[1,3],[2,5],[3,4],[4,5],[5,6],[6,7],[7,8],[6,9]]
+      },
+
+      // ── STORY ADS ──
+      story_ads: {
+        name: 'Story Ads', desc: 'Anúncio em stories → oferta direta para produto de baixo ticket', emoji: '🎬',
+        blocks: [
+          { k: 'instagram', x: 40, y: 60 },
+          { k: 'facebook', x: 40, y: 240 },
+          { k: 'criativo_vid', x: 230, y: 60 },
+          { k: 'criativo_img', x: 230, y: 240 },
+          { k: 'landing_page', x: 420, y: 150 },
+          { k: 'pag_pedido', x: 610, y: 60 },
+          { k: 'order_bump', x: 610, y: 200 },
+          { k: 'pag_obrigado', x: 800, y: 60 },
+          { k: 'email_bv', x: 800, y: 240 }
+        ],
+        conns: [[0,2],[0,3],[1,2],[1,3],[2,4],[3,4],[4,5],[5,6],[5,7],[6,7],[7,8]]
+      },
+
+      // ── LANÇAMENTO PAGO ──
+      lancamento_pago: {
+        name: 'Lançamento via Tráfego Pago', desc: 'Escala rápida via anúncios pagos com webinar de conversão', emoji: '🚀',
+        blocks: [
+          { k: 'trafego_pago', x: 40, y: 150 },
+          { k: 'pag_captura', x: 230, y: 150 },
+          { k: 'email_bv', x: 420, y: 240 },
+          { k: 'webinar', x: 420, y: 60 },
+          { k: 'email_conteudo', x: 610, y: 240 },
+          { k: 'email_promo', x: 800, y: 240 },
+          { k: 'pag_vendas', x: 610, y: 60 },
+          { k: 'pag_pedido', x: 800, y: 60 },
+          { k: 'pag_obrigado', x: 990, y: 60 },
+          { k: 'upsell', x: 990, y: 240 },
+          { k: 'downsell', x: 1180, y: 240 }
+        ],
+        conns: [[0,1],[1,2],[1,3],[2,4],[3,6],[4,5],[5,6],[6,7],[7,8],[8,9],[9,10]]
+      },
+
+      // ── GRUPO VIP WHATSAPP ──
+      grupo_vip: {
+        name: 'Grupo VIP (WhatsApp)', desc: 'Comunidade de compradores no WhatsApp como canal de venda recorrente', emoji: '🔐',
+        blocks: [
+          { k: 'trafego_pago', x: 40, y: 60 },
+          { k: 'instagram', x: 40, y: 240 },
+          { k: 'pag_captura', x: 230, y: 150 },
+          { k: 'whatsapp', x: 420, y: 150 },
+          { k: 'email_bv', x: 610, y: 240 },
+          { k: 'email_conteudo', x: 800, y: 240 },
+          { k: 'pag_vendas', x: 610, y: 60 },
+          { k: 'pag_pedido', x: 800, y: 60 },
+          { k: 'pag_obrigado', x: 990, y: 60 },
+          { k: 'comunidade', x: 990, y: 240 }
+        ],
+        conns: [[0,2],[1,2],[2,3],[3,4],[3,6],[4,5],[5,6],[6,7],[7,8],[8,9]]
+      },
+
+      // ── LANÇAMENTO FÓRMULA ──
+      lancamento_trad: {
+        name: 'Lançamento Fórmula de Lançamento', desc: 'CPL + 4 conteúdos de pré-lançamento + abertura + upsell', emoji: '🏆',
+        blocks: [
+          { k: 'trafego_pago', x: 40, y: 60 },
+          { k: 'trafego_organico', x: 40, y: 240 },
+          { k: 'pag_captura', x: 230, y: 150 },
+          { k: 'email_bv', x: 420, y: 240 },
+          { k: 'email_conteudo', x: 610, y: 240 },
+          { k: 'email_conteudo', x: 800, y: 240 },
+          { k: 'email_promo', x: 990, y: 240 },
+          { k: 'webinar', x: 420, y: 60 },
+          { k: 'pag_vendas', x: 610, y: 60 },
+          { k: 'pag_pedido', x: 800, y: 60 },
+          { k: 'pag_obrigado', x: 990, y: 60 },
+          { k: 'upsell', x: 1180, y: 60 },
+          { k: 'downsell', x: 1180, y: 240 },
+          { k: 'area_membros', x: 1370, y: 60 }
+        ],
+        conns: [[0,2],[1,2],[2,3],[2,7],[3,4],[4,5],[5,6],[6,8],[7,8],[8,9],[9,10],[10,11],[10,12],[11,13]]
       }
     };
 
@@ -3904,7 +4251,41 @@
     function closeMod() { document.getElementById('moverlay').classList.remove('open'); }
     function buildMTpls() {
       const c = document.getElementById('mtpls'); c.innerHTML = '';
-      const firstKey = Object.keys(TEMPLATES)[0];
+
+      // Templates customizados primeiro
+      const custom = getCustomTpls();
+      if (custom.length > 0) {
+        const sepDiv = document.createElement('div');
+        sepDiv.style.cssText = 'grid-column:1/-1;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;padding:4px 0 2px;border-top:1px solid var(--border);margin-top:4px';
+        sepDiv.textContent = 'Meus Templates';
+        c.appendChild(sepDiv);
+        custom.forEach(t => {
+          const el = document.createElement('div');
+          el.className = 'mtpl';
+          el.dataset.k = t.id;
+          el.dataset.name = (t.name + ' ' + t.desc).toLowerCase();
+          el.innerHTML = `<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+            <span style="font-size:16px">${t.emoji}</span>
+            <div class="mtpl-name" style="font-size:12px;flex:1">${t.name}</div>
+            <div onclick="event.stopPropagation();deleteCustomTpl('${t.id}')" style="color:var(--danger);cursor:pointer;font-size:14px;padding:0 2px" title="Remover">×</div>
+          </div>
+          <div class="mtpl-desc">${t.desc}</div>
+          <div style="font-size:9px;font-family:var(--mono);color:var(--text3);margin-top:5px">${t.blocks.length} elemento${t.blocks.length !== 1 ? 's' : ''} · customizado</div>`;
+          el.addEventListener('click', () => {
+            document.querySelectorAll('.mtpl').forEach(m => m.classList.remove('sel'));
+            el.classList.add('sel');
+            UI.selTpl = t.id;
+            UI._customTpl = t;
+          });
+          c.appendChild(el);
+        });
+        const sep2 = document.createElement('div');
+        sep2.style.cssText = 'grid-column:1/-1;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;padding:4px 0 2px;border-top:1px solid var(--border);margin-top:4px';
+        sep2.textContent = 'Templates Padrão';
+        c.appendChild(sep2);
+      }
+
+      // Templates padrão
       Object.entries(TEMPLATES).forEach(([k, t]) => {
         const el = document.createElement('div');
         el.className = 'mtpl' + (k === 'perpetuo' ? ' sel' : '');
@@ -3912,10 +4293,16 @@
         el.dataset.name = (t.name + ' ' + t.desc).toLowerCase();
         const cnt = t.blocks ? t.blocks.length : 0;
         el.innerHTML = `<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span style="font-size:16px">${t.emoji || '✨'}</span><div class="mtpl-name" style="font-size:12px">${t.name}</div></div><div class="mtpl-desc">${t.desc}</div>${cnt > 0 ? `<div style="font-size:9px;font-family:var(--mono);color:var(--text3);margin-top:5px">${cnt} elemento${cnt !== 1 ? 's' : ''}</div>` : '<div style="font-size:9px;font-family:var(--mono);color:var(--text3);margin-top:5px">canvas vazio</div>'}`;
-        el.addEventListener('click', () => { document.querySelectorAll('.mtpl').forEach(m => m.classList.remove('sel')); el.classList.add('sel'); UI.selTpl = k; });
+        el.addEventListener('click', () => {
+          document.querySelectorAll('.mtpl').forEach(m => m.classList.remove('sel'));
+          el.classList.add('sel');
+          UI.selTpl = k;
+          UI._customTpl = null;
+        });
         c.appendChild(el);
       });
       UI.selTpl = 'perpetuo';
+      UI._customTpl = null;
     }
     function filterMTpls(q) {
       const term = q.toLowerCase().trim();
@@ -3923,16 +4310,66 @@
         el.style.display = (!term || el.dataset.name.includes(term)) ? '' : 'none';
       });
     }
+
+    // ── CUSTOM TEMPLATES ──
+    const _CTPL_KEY = 'fn365_custom_tpls';
+    function getCustomTpls() { try { return JSON.parse(localStorage.getItem(_CTPL_KEY)) || []; } catch(e) { return []; } }
+    function saveCustomTplStore(tpls) { localStorage.setItem(_CTPL_KEY, JSON.stringify(tpls)); }
+
+    function saveCurrentAsTemplate() {
+      const f = af(); if (!f || f.nodes.length === 0) { toast('Adicione blocos ao funil antes de salvar como template'); return; }
+      const name = prompt('Nome do template:', f.name);
+      if (!name) return;
+      const desc = prompt('Descrição curta:', 'Meu template personalizado');
+      const tpl = {
+        id: 'ctpl_' + Date.now(),
+        name: name.trim(),
+        desc: desc?.trim() || '',
+        emoji: '⭐',
+        blocks: f.nodes.map(n => ({ k: n.key, x: n.x, y: n.y })),
+        conns: f.connections.map(c => {
+          const fi = f.nodes.findIndex(n => n.id === c.from);
+          const ti = f.nodes.findIndex(n => n.id === c.to);
+          return [fi, ti];
+        }).filter(([fi, ti]) => fi !== -1 && ti !== -1),
+        createdAt: Date.now()
+      };
+      const tpls = getCustomTpls();
+      tpls.push(tpl);
+      saveCustomTplStore(tpls);
+      toast('✓ Template "' + name + '" salvo!');
+      buildMTpls();
+    }
+
+    function deleteCustomTpl(id) {
+      if (!confirm('Remover este template?')) return;
+      const tpls = getCustomTpls().filter(t => t.id !== id);
+      saveCustomTplStore(tpls);
+      buildMTpls();
+      toast('Template removido');
+    }
+
     function createFunil() {
       const name = document.getElementById('mn').value.trim() || 'Novo Funil';
-      const tpl = TEMPLATES[UI.selTpl];
       const id = 'f' + Date.now(); const nodes = [], connections = [];
-      tpl.blocks.forEach((b, i) => {
+
+      let blocks = [], conns = [];
+      if (UI._customTpl) {
+        blocks = UI._customTpl.blocks;
+        conns = UI._customTpl.conns;
+      } else {
+        const tpl = TEMPLATES[UI.selTpl];
+        blocks = tpl.blocks || [];
+        conns = tpl.conns || [];
+      }
+
+      blocks.forEach((b) => {
         const bd = BLOCKS[b.k]; if (!bd) return;
         const nid = 'n' + (++UI.nCounter);
         nodes.push({ id: nid, key: b.k, x: b.x, y: b.y, title: bd.label, note: '', url: '', conv: bd.conv, impressoes: 0, leads: 0, vendas: 0, receita: 0 });
       });
-      if (tpl.conns) { tpl.conns.forEach(([fi, ti]) => { if (nodes[fi] && nodes[ti]) connections.push({ id: 'c' + (++UI.cCounter), from: nodes[fi].id, to: nodes[ti].id }); }); }
+      conns.forEach(([fi, ti]) => { if (nodes[fi] && nodes[ti]) connections.push({ id: 'c' + (++UI.cCounter), from: nodes[fi].id, to: nodes[ti].id }); });
+
       STATE.funils.push({ id, name, nodes, connections, textNodes: [], drawPaths: [], createdAt: Date.now() });
       STATE.activeId = id; closeMod(); renderTabs(); renderCanvas(); save(); toast(`"${name}" criado`);
     }
@@ -4498,6 +4935,77 @@
     // ══════════════════════════════════════════
     // AI CHAT
     // ══════════════════════════════════════════
+    const MARKETING_KNOWLEDGE = `
+Você é um estrategista sênior de Marketing Digital com 10+ anos de experiência em funis de conversão. Você conhece profundamente as metodologias de Russell Brunson, Gary Vee, Frank Kern e os principais players do mercado brasileiro (Érico Rocha, Bruno Gimenes, Pablo Marçal).
+
+BLOCOS DISPONÍVEIS E SEUS PAPÉIS ESTRATÉGICOS:
+• trafego_pago: Meta/Google Ads. Ponto de entrada frio. Escala rápida mas custa por clique.
+• trafego_organico: SEO, social orgânico. Lento, mas custo zero e audiência mais quente.
+• instagram/facebook/tiktok/youtube/linkedin: Canais específicos. LinkedIn para B2B/high ticket.
+• influencer: Parceria. Audiência quente, ótimo para validação de produto.
+• criativo_img/criativo_vid/criativo_car: Formatos de anúncio. Vídeo converte até 3x mais para produtos complexos.
+• pag_captura: Coleta email/WhatsApp em troca de isca digital (ebook, checklist, aula). Conv: 20-45%.
+• pag_vendas: VSL ou carta longa. Conv média: 1-5% (tráfego frio), 5-15% (lista quente).
+• pag_vendas_vsl: VSL específico. Ideal para ticket R$297-R$997. Conv: 2-8%.
+• pag_pedido: Checkout. Se chegou aqui, 60-80% compra. Order Bump aqui é OBRIGATÓRIO.
+• pag_obrigado: Pós-compra. Use para upsell imediato, direcionamento para WhatsApp ou grupo.
+• pag_obrigado_count: Com countdown. Cria urgência para oferta seguinte.
+• order_bump: Oferta no checkout. Ticket baixo (R$17-97). Conv: 15-35%. SEMPRE usar.
+• upsell: Após compra. Oferta maior (2-3x o ticket principal). Conv: 15-30%.
+• downsell: Recusou upsell? Oferta menor. Conv: 10-20%. Recupera receita perdida.
+• email_bv: Boas-vindas. Entrega a isca + apresenta quem você é. Taxa abertura: 40-60%.
+• email_conteudo: Nutrição. Constrói autoridade. NUNCA venda sem antes dar valor.
+• email_promo: Oferta. Vem depois de 3-5 emails de valor. Taxa clique: 2-8%.
+• whatsapp: Canal de maior conversão (até 98% abertura). Usar para qualificação ou suporte.
+• sms: Apenas lembretes urgentes. Não use para venda direta.
+• webinar: Conv de inscritos para presença: 20-40%. Conv presença para venda: 10-25%.
+• live: Transmissão ao vivo. Urgência e conexão. Melhor para ofertas relâmpago.
+• condicional: Bifurcação baseada em comportamento. Use para qualificação (quente/frio).
+• manychat: Automação de DMs. Essencial para funis de Instagram orgânico.
+• area_membros: Entrega do produto. Sempre ao final do funil de compra.
+• activecampaign: CRM/email marketing. Segmentação avançada de leads.
+
+REGRAS ESTRATÉGICAS INVIOLÁVEIS:
+1. HIGH TICKET (>R$1.500): NUNCA venda direto. Fluxo: Captura → VSL → WhatsApp → Call → Fechamento
+2. LANÇAMENTO: Precisa de aquecimento (mín. 7 dias de CPL) antes de abrir carrinho
+3. PERPÉTUO/EVERGREEN: Tráfego → Captura → Sequência automática → Venda sempre ativa
+4. LEAD GEN: Foco total na captura. Qualificação por email + WhatsApp antes de vender
+5. E-COMMERCE: Order Bump no checkout é OBRIGATÓRIO. Upsell pós-compra aumenta LTV em 40%
+6. WEBINAR: Sequência de aquecimento antes + follow-up agressivo depois são essenciais
+7. TICKET BAIXO (<R$197): Pode vender direto. Mas sempre com Order Bump no checkout
+8. INSTAGRAM ORGÂNICO: Stories → DM → Manychat → Qualificação → Oferta
+9. NEVER: Não coloque tráfego frio direto para página de vendas de high ticket
+
+ANTES DE CRIAR UM FUNIL, SEMPRE PERGUNTE (uma pergunta de cada vez):
+- "Qual é o produto/serviço e o nicho de atuação?"
+- "Qual o ticket médio? (ex: R$97, R$497, R$2.000+)"
+- "Qual canal de tráfego você vai usar?"
+- "Objetivo principal: venda direta, captação de leads ou agendamento de call?"
+
+Colete TODAS as 4 respostas antes de criar o funil.
+
+FORMATO DE RESPOSTA — SEMPRE JSON:
+Quando responder, use SEMPRE este formato JSON:
+{
+  "tipo": "funil" ou "pergunta",
+  "resposta": "texto explicativo em português",
+  "funil": {
+    "nome": "Nome criativo do Funil",
+    "blocos": [{"key": "chave_do_bloco", "x": 40, "y": 80}],
+    "conexoes": [[0,1],[1,2]]
+  }
+}
+
+Quando coletar informações ou responder dúvidas: tipo = "pergunta", sem campo "funil".
+Quando criar o funil: tipo = "funil", campo "resposta" explica a estratégia usada.
+
+LAYOUT DOS BLOCOS:
+- x começa em 40, incrementa 190 por bloco na horizontal
+- y: use 60 para linha de cima, 220 para linha de baixo
+- Funis lineares: todos em y=80
+- Funis com duas linhas: y=60 (principal) e y=220 (paralelo/sequência de email)
+`;
+
     const aiConfig = {
       model: 'groq',
       keys: {
@@ -4525,28 +5033,80 @@
       return ctx;
     }
     async function sendAIChat() {
-      const input = document.getElementById('ai-input'); const text = input.value.trim(); if (!text) return;
+      const input = document.getElementById('ai-input');
+      const text = input.value.trim();
+      if (!text) return;
       input.value = '';
-      if (!aiConfig.keys[aiConfig.model] || aiConfig.keys[aiConfig.model].startsWith('INSERIR')) { toast('CHAVE NÃO CONFIGURADA: Adicione a chave no código backend.'); return; }
-      addAILog(text, true); aiConfig.history.push({ role: 'user', content: text });
+
+      if (!aiConfig.keys[aiConfig.model] || aiConfig.keys[aiConfig.model].startsWith('INSERIR')) {
+        toast('Configure a chave de API primeiro'); return;
+      }
+
+      addAILog(text, true);
+      aiConfig.history.push({ role: 'user', content: text });
       const botEl = addAILog('Pensando...', false);
+
       const ctx = buildFunnelContext();
-      const sys = 'Você é um especialista em Marketing Digital e Funis de Venda ajudando no software Funil365. ' + ctx + ' Responda de forma concisa. FALE SEMPRE EM PORTUGUÊS DO BRASIL.';
+      const sys = MARKETING_KNOWLEDGE + '\n\nCONTEXTO ATUAL DO CANVAS:\n' + ctx + '\n\nIMPORTANTE: Responda SEMPRE em JSON válido com os campos "tipo" e "resposta". Fale sempre em português do Brasil.';
+
       try {
         let rt = '';
-        if (aiConfig.model === 'openai') {
-          const res = await fetch('https://api.openai.com/v1/chat/completions', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${aiConfig.keys.openai}` }, body: JSON.stringify({ model: 'gpt-4o-mini', messages: [{ role: 'system', content: sys }, ...aiConfig.history] }) });
-          const data = await res.json(); if (data.error) throw new Error(data.error.message); rt = data.choices[0].message.content;
-        } else if (aiConfig.model === 'groq') {
-          const res = await fetch('https://api.groq.com/openai/v1/chat/completions', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${aiConfig.keys.groq}` }, body: JSON.stringify({ model: 'llama-3.3-70b-versatile', messages: [{ role: 'system', content: sys }, ...aiConfig.history] }) });
-          const data = await res.json(); if (data.error) throw new Error(data.error.message); rt = data.choices[0].message.content;
+        const messages = [{ role: 'system', content: sys }, ...aiConfig.history];
+
+        if (aiConfig.model === 'groq') {
+          const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${aiConfig.keys.groq}` },
+            body: JSON.stringify({ model: 'llama-3.3-70b-versatile', messages, response_format: { type: 'json_object' } })
+          });
+          const data = await res.json();
+          if (data.error) throw new Error(data.error.message);
+          rt = data.choices[0].message.content;
+        } else if (aiConfig.model === 'openai') {
+          const res = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${aiConfig.keys.openai}` },
+            body: JSON.stringify({ model: 'gpt-4o-mini', messages, response_format: { type: 'json_object' } })
+          });
+          const data = await res.json();
+          if (data.error) throw new Error(data.error.message);
+          rt = data.choices[0].message.content;
         } else {
           const msgs = aiConfig.history.map(m => ({ role: m.role === 'user' ? 'user' : 'model', parts: [{ text: m.content }] }));
-          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${aiConfig.keys.gemini}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ system_instruction: { parts: [{ text: sys }] }, contents: msgs }) });
-          const data = await res.json(); if (data.error) throw new Error(data.error.message); rt = data.candidates[0].content.parts[0].text;
+          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${aiConfig.keys.gemini}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ system_instruction: { parts: [{ text: sys }] }, contents: msgs, generationConfig: { responseMimeType: 'application/json' } })
+          });
+          const data = await res.json();
+          if (data.error) throw new Error(data.error.message);
+          rt = data.candidates[0].content.parts[0].text;
         }
-        botEl.innerHTML = rt.replace(/\n/g, '<br/>'); aiConfig.history.push({ role: 'assistant', content: rt });
-        deductAICredits(0.15);
+
+        const parsed = JSON.parse(rt);
+        const resposta = parsed.resposta || rt;
+        botEl.innerHTML = resposta.replace(/\n/g, '<br/>');
+        aiConfig.history.push({ role: 'assistant', content: rt });
+
+        if (parsed.tipo === 'funil' && parsed.funil) {
+          const funil = parsed.funil;
+          const id = 'f' + Date.now(); const nodes = [], connections = [];
+          (funil.blocos || []).forEach((b, i) => {
+            const bd = BLOCKS[b.key]; if (!bd) return;
+            const nid = 'n' + (++UI.nCounter);
+            nodes.push({ id: nid, key: b.key, x: b.x || i * 190 + 40, y: b.y || 80, title: bd.label, note: '', url: '', conv: bd.conv, impressoes: 0, leads: 0, vendas: 0, receita: 0 });
+          });
+          (funil.conexoes || []).forEach(([fi, ti]) => {
+            if (nodes[fi] && nodes[ti]) connections.push({ id: 'c' + (++UI.cCounter), from: nodes[fi].id, to: nodes[ti].id });
+          });
+          STATE.funils.push({ id, name: funil.nome || 'Funil IA', nodes, connections, textNodes: [], drawPaths: [], createdAt: Date.now() });
+          STATE.activeId = id;
+          renderTabs(); renderCanvas(); save();
+          deductAICredits(1.50);
+        } else {
+          deductAICredits(0.15);
+        }
+
       } catch (err) {
         botEl.closest('.ai-msg')?.remove();
         const msg = err.message || '';
@@ -4572,26 +5132,26 @@
       if (!text) { toast('Descreva sua campanha para gerar o funil'); return; }
       const btn = document.getElementById('aig-gen-btn');
       btn.disabled = true; btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/></svg> Gerando...';
-      const availKeys = Object.keys(BLOCKS).join(', ');
-      const prompt = `Você é um especialista em funis de marketing digital. O usuário quer criar um funil para: "${text}"
+      const ticket = document.getElementById('aig-ticket')?.value || '';
+      const canal = document.getElementById('aig-canal')?.value || '';
+      const contexto = `Produto/Objetivo: ${text}${ticket ? '\nTicket: ' + ticket : ''}${canal ? '\nCanal: ' + canal : ''}`;
 
-Responda APENAS com um JSON válido (sem markdown, sem explicações):
+      const prompt = MARKETING_KNOWLEDGE + `
+
+O usuário quer criar um funil com estas informações:
+${contexto}
+
+Responda APENAS com JSON válido (sem markdown):
 {
-  "nome": "Nome do Funil",
-  "blocos": [
-    {"key": "chave_do_bloco", "x": 40, "y": 80},
-    ...
-  ],
-  "conexoes": [[0,1],[1,2],...]
+  "tipo": "funil",
+  "nome": "Nome criativo do Funil",
+  "blocos": [{"key": "chave", "x": 40, "y": 80}],
+  "conexoes": [[0,1],[1,2]]
 }
 
-CHAVES DISPONÍVEIS: trafego_pago, trafego_organico, instagram, facebook, tiktok, youtube, pag_captura, pag_vendas, pag_pedido, pag_obrigado, pag_vendas_vsl, landing_page, area_membros, upsell, downsell, order_bump, email_bv, email_conteudo, email_promo, whatsapp, webinar, influencer, criativo_img, criativo_vid
+CHAVES DISPONÍVEIS: trafego_pago, trafego_organico, instagram, facebook, tiktok, youtube, linkedin, influencer, criativo_img, criativo_vid, criativo_car, pag_captura, pag_vendas, pag_vendas_vsl, pag_pedido, pag_obrigado, pag_obrigado_count, landing_page, area_membros, upsell, downsell, order_bump, email_bv, email_conteudo, email_promo, whatsapp, webinar, live, condicional, manychat, activecampaign
 
-REGRAS:
-- Use no máximo 10 blocos relevantes para o objetivo
-- Layout: x começa em 40, aumenta de 180 em 180; y alterna entre 60 e 220
-- Conexoes são índices dos blocos no array (começando em 0)
-- O nome deve ser criativo e relacionado ao objetivo`;
+Use no máximo 12 blocos. Aplique as regras estratégicas do seu conhecimento. Conexoes são índices do array de blocos (começando em 0).`;
       try {
         let rt = '';
         if (aiConfig.model === 'gemini') {
@@ -4612,22 +5172,9 @@ REGRAS:
         (parsed.blocos || []).forEach((b, i) => {
           const bd = BLOCKS[b.key]; if (!bd) return;
           const nid = 'n' + (++UI.nCounter);
-          nodes.push({ id: nid, key: b.key, x: b.x || i * 180 + 40, y: b.y || 60, title: bd.label, note: '', url: '', conv: bd.conv, impressoes: 0, leads: 0, vendas: 0, receita: 0 });
+          nodes.push({ id: nid, key: b.key, x: b.x || i * 190 + 40, y: b.y || 80, title: bd.label, note: '', url: '', conv: bd.conv, impressoes: 0, leads: 0, vendas: 0, receita: 0 });
         });
-        let norm = [];
-        (parsed.conexoes || []).forEach(c => {
-          if (Array.isArray(c)) {
-            if (c.length === 2 && typeof c[0] === 'number' && typeof c[1] === 'number') norm.push(c);
-            else if (c.length === 1 && typeof c[0] === 'string' && c[0].length >= 2) norm.push([parseInt(c[0].charAt(0)), parseInt(c[0].charAt(1))]);
-            else if (c.length === 1 && typeof c[0] === 'number' && c[0] >= 10) norm.push([Math.floor(c[0] / 10), c[0] % 10]);
-          } else if (typeof c === 'string' && c.length >= 2) {
-            norm.push([parseInt(c.charAt(0)), parseInt(c.charAt(1))]);
-          } else if (typeof c === 'number' && c >= 10) {
-            norm.push([Math.floor(c / 10), c % 10]);
-          }
-        });
-        norm.forEach(c => {
-          let fi = c[0], ti = c[1];
+        (parsed.conexoes || []).forEach(([fi, ti]) => {
           if (nodes[fi] && nodes[ti]) connections.push({ id: 'c' + (++UI.cCounter), from: nodes[fi].id, to: nodes[ti].id });
         });
         STATE.funils.push({ id, name, nodes, connections, textNodes: [], drawPaths: [], createdAt: Date.now() });

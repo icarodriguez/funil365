@@ -5238,7 +5238,7 @@
     }
     function closeGenModal(id) { document.getElementById(id).classList.remove('open'); document.getElementById(id).style.display = ''; }
     document.addEventListener('keydown', e => {
-      if (e.key === 'Escape') { UI.connFrom = null; hideCtx(); drawLines(); document.querySelectorAll('.gen-overlay.open').forEach(m => m.classList.remove('open')); document.getElementById('moverlay')?.classList.remove('open'); }
+      if (e.key === 'Escape') { UI.connFrom = null; hideCtx(); drawLines(); document.querySelectorAll('.gen-overlay.open').forEach(m => m.classList.remove('open')); document.getElementById('moverlay')?.classList.remove('open'); closeSummaryModal(); }
       if ((e.key === 'Delete' || e.key === 'Backspace') && UI.selId && !e.target.closest('input,textarea,[contenteditable]')) deleteNode(UI.selId);
     });
 
@@ -6103,6 +6103,152 @@ Use no máximo 12 blocos. Aplique as regras estratégicas do seu conhecimento. C
       const session = getSession();
       if (session) { startApp(session); }
       else { document.getElementById('auth-screen').style.display = 'flex'; }
+    }
+
+    // ══════════════════════════════════════════
+    // EXPORT — RESUMO ESTRATÉGICO
+    // ══════════════════════════════════════════
+    function buildFunnelOrdered() {
+      const f = af();
+      if (!f || f.nodes.length === 0) return null;
+      const adj = {};
+      f.nodes.forEach(n => { adj[n.id] = []; });
+      f.connections.forEach(c => { if (adj[c.from] !== undefined) adj[c.from].push(c.to); });
+      const hasIncoming = new Set();
+      f.connections.forEach(c => hasIncoming.add(c.to));
+      const roots = f.nodes.filter(n => !hasIncoming.has(n.id));
+      const visited = new Set();
+      const ordered = [];
+      const queue = roots.length > 0 ? roots.map(r => r.id) : [f.nodes[0].id];
+      while (queue.length > 0) {
+        const id = queue.shift();
+        if (visited.has(id)) continue;
+        visited.add(id);
+        const node = f.nodes.find(n => n.id === id);
+        if (node) { ordered.push(node); (adj[id] || []).forEach(nid => { if (!visited.has(nid)) queue.push(nid); }); }
+      }
+      f.nodes.forEach(n => { if (!visited.has(n.id)) ordered.push(n); });
+      return ordered;
+    }
+
+    function buildSummaryText(ordered) {
+      const funil = STATE.funils.find(fn => fn.id === STATE.current);
+      const title = funil ? funil.name : 'Funil';
+      const date = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      let txt = '';
+      txt += '═'.repeat(52) + '\n';
+      txt += `  FUNIL365 — RESUMO ESTRATÉGICO\n`;
+      txt += '═'.repeat(52) + '\n';
+      txt += `  ${title}\n`;
+      txt += `  Gerado em: ${date}  |  Total de etapas: ${ordered.length}\n`;
+      txt += '═'.repeat(52) + '\n\n';
+      ordered.forEach((node, i) => {
+        const b = BLOCKS[node.key];
+        if (!b) return;
+        txt += `ETAPA ${String(i + 1).padStart(2, '0')}  ▸  ${b.label.toUpperCase()}\n`;
+        txt += `         Categoria : ${b.cat}\n`;
+        txt += `         Função    : ${b.sub}\n`;
+        txt += `         Conv.     : ${node.conv}%\n`;
+        if (node.name && node.name !== b.label) txt += `         Nome      : ${node.name}\n`;
+        if (node.url) txt += `         URL       : ${node.url}\n`;
+        if (node.note) txt += `         Nota      : ${node.note}\n`;
+        txt += '\n';
+      });
+      const f = af();
+      if (f && f.connections.length > 0) {
+        txt += '─'.repeat(52) + '\n';
+        txt += 'FLUXO DE CONEXÕES\n';
+        txt += '─'.repeat(52) + '\n';
+        const nodeMap = {};
+        f.nodes.forEach(n => { nodeMap[n.id] = { b: BLOCKS[n.key], step: ordered.findIndex(o => o.id === n.id) + 1 }; });
+        f.connections.forEach(c => {
+          const from = nodeMap[c.from];
+          const to = nodeMap[c.to];
+          if (from && to && from.b && to.b) {
+            txt += `  Etapa ${String(from.step).padStart(2,'0')} [${from.b.label}]  →  Etapa ${String(to.step).padStart(2,'0')} [${to.b.label}]\n`;
+          }
+        });
+      }
+      txt += '\n' + '─'.repeat(52) + '\n';
+      txt += 'Gerado com Funil365 — funil365.app\n';
+      return txt;
+    }
+
+    function openSummaryModal() {
+      const ordered = buildFunnelOrdered();
+      if (!ordered || ordered.length === 0) { toast('Adicione blocos ao canvas primeiro'); return; }
+      const txt = buildSummaryText(ordered);
+      document.getElementById('summary-preview').textContent = txt;
+      const overlay = document.getElementById('summary-overlay');
+      overlay.style.display = 'flex';
+    }
+
+    function closeSummaryModal() {
+      document.getElementById('summary-overlay').style.display = 'none';
+    }
+
+    function downloadSummaryTXT() {
+      const ordered = buildFunnelOrdered();
+      if (!ordered) return;
+      const txt = buildSummaryText(ordered);
+      const funil = STATE.funils.find(fn => fn.id === STATE.current);
+      const name = (funil?.name || 'funil').toLowerCase().replace(/\s+/g, '-');
+      const blob = new Blob([txt], { type: 'text/plain;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `resumo-${name}.txt`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+
+    function downloadSummaryDOCX() {
+      if (typeof docx === 'undefined') { toast('Biblioteca DOCX não carregou. Verifique sua conexão.'); return; }
+      const ordered = buildFunnelOrdered();
+      if (!ordered) return;
+      const funil = STATE.funils.find(fn => fn.id === STATE.current);
+      const title = funil ? funil.name : 'Funil';
+      const date = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      const { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } = docx;
+      const children = [];
+      children.push(new Paragraph({ text: 'FUNIL365 — RESUMO ESTRATÉGICO', heading: HeadingLevel.HEADING_1, alignment: AlignmentType.CENTER }));
+      children.push(new Paragraph({ children: [new TextRun({ text: title, bold: true, size: 28 })], alignment: AlignmentType.CENTER }));
+      children.push(new Paragraph({ children: [new TextRun({ text: `Gerado em: ${date}  |  Total de etapas: ${ordered.length}`, color: '666666', size: 20 })], alignment: AlignmentType.CENTER }));
+      children.push(new Paragraph({ text: '' }));
+      children.push(new Paragraph({ text: 'SEQUÊNCIA DO FUNIL', heading: HeadingLevel.HEADING_2 }));
+      children.push(new Paragraph({ text: '' }));
+      ordered.forEach((node, i) => {
+        const b = BLOCKS[node.key];
+        if (!b) return;
+        children.push(new Paragraph({ children: [new TextRun({ text: `${String(i + 1).padStart(2, '0')}. ${b.label}`, bold: true, size: 24 }), new TextRun({ text: `  —  ${b.sub}`, size: 22, color: '444444' })] }));
+        children.push(new Paragraph({ children: [new TextRun({ text: `Categoria: ${b.cat}`, size: 18, color: '888888' }), new TextRun({ text: `   |   Conversão esperada: ${node.conv}%`, size: 18, color: '888888' })] }));
+        if (node.url) children.push(new Paragraph({ children: [new TextRun({ text: `URL: ${node.url}`, size: 18, color: '0ea5e9' })] }));
+        if (node.note) children.push(new Paragraph({ children: [new TextRun({ text: `Nota: ${node.note}`, size: 18, italics: true, color: '555555' })] }));
+        children.push(new Paragraph({ text: '' }));
+      });
+      const f = af();
+      if (f && f.connections.length > 0) {
+        children.push(new Paragraph({ text: 'FLUXO DE CONEXÕES', heading: HeadingLevel.HEADING_2 }));
+        children.push(new Paragraph({ text: '' }));
+        const nodeMap = {};
+        f.nodes.forEach(n => { nodeMap[n.id] = { b: BLOCKS[n.key], step: ordered.findIndex(o => o.id === n.id) + 1 }; });
+        f.connections.forEach(c => {
+          const from = nodeMap[c.from]; const to = nodeMap[c.to];
+          if (from && to && from.b && to.b) {
+            children.push(new Paragraph({ children: [new TextRun({ text: `Etapa ${String(from.step).padStart(2,'0')} [${from.b.label}]`, bold: true }), new TextRun({ text: '  →  ' }), new TextRun({ text: `Etapa ${String(to.step).padStart(2,'0')} [${to.b.label}]`, bold: true })] }));
+          }
+        });
+      }
+      children.push(new Paragraph({ text: '' }));
+      children.push(new Paragraph({ children: [new TextRun({ text: 'Gerado com Funil365 — funil365.app', size: 16, color: '999999', italics: true })], alignment: AlignmentType.CENTER }));
+      const doc = new Document({ sections: [{ properties: {}, children }] });
+      const name = title.toLowerCase().replace(/\s+/g, '-');
+      Packer.toBlob(doc).then(blob => {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `resumo-${name}.docx`;
+        a.click();
+        URL.revokeObjectURL(a.href);
+      });
     }
 
     // ══════════════════════════════════════════

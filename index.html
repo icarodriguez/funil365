@@ -1196,6 +1196,26 @@
       border-radius: 8px;
     }
 
+    /* ── RESIZE HANDLE ── */
+    .resize-handle {
+      position: absolute;
+      bottom: -4px;
+      right: -4px;
+      width: 14px;
+      height: 14px;
+      background: var(--accent, #2563eb);
+      border: 2px solid #fff;
+      border-radius: 3px;
+      cursor: se-resize;
+      opacity: 0;
+      transition: opacity .15s;
+      z-index: 10;
+    }
+    .node:hover .resize-handle,
+    .node.selected .resize-handle {
+      opacity: 1;
+    }
+
     /* ── PROPS PANEL ── */
     #props {
       width: var(--props);
@@ -4989,16 +5009,18 @@
       el.addEventListener('mousedown', e => {
         if (e.target.closest('.node-del') || e.target.closest('.conn-out') || e.target.closest('.conn-in')) return;
         if (e.altKey) { e.preventDefault(); duplicateNode(node.id); return; }
-        selectNode(node.id);
-        UI.isDrag = true; UI.dragId = node.id;
-        const r = document.getElementById('canvas-wrap').getBoundingClientRect();
-        UI.offX = (e.clientX - r.left - UI.panX) / UI.scale - node.x;
-        UI.offY = (e.clientY - r.top - UI.panY) / UI.scale - node.y;
-        // Initialize multi-drag tracking
-        if (UI.multiSel.length > 1 && UI.multiSel.includes(node.id)) {
-          const mx = (e.clientX - r.left - UI.panX) / UI.scale;
-          const my = (e.clientY - r.top - UI.panY) / UI.scale;
-          UI._lastMultiDrag = { x: mx, y: my };
+        selectNode(node.id, e.shiftKey);
+        if (!e.shiftKey) {
+          UI.isDrag = true; UI.dragId = node.id;
+          const r = document.getElementById('canvas-wrap').getBoundingClientRect();
+          UI.offX = (e.clientX - r.left - UI.panX) / UI.scale - node.x;
+          UI.offY = (e.clientY - r.top - UI.panY) / UI.scale - node.y;
+          // Initialize multi-drag tracking
+          if (UI.multiSel.length > 1 && UI.multiSel.includes(node.id)) {
+            const mx = (e.clientX - r.left - UI.panX) / UI.scale;
+            const my = (e.clientY - r.top - UI.panY) / UI.scale;
+            UI._lastMultiDrag = { x: mx, y: my };
+          }
         }
         e.preventDefault();
       });
@@ -5040,6 +5062,22 @@
       UI.dragType = null;
     }
     document.addEventListener('mousemove', e => {
+      if (UI.isResize && UI.resizeId) {
+        const f = af(); if (!f) return;
+        const nd = f.textNodes && f.textNodes.find(n => n.id === UI.resizeId);
+        if (!nd) return;
+        const r = document.getElementById('canvas-wrap').getBoundingClientRect();
+        const mx = (e.clientX - r.left - UI.panX) / UI.scale;
+        const my = (e.clientY - r.top - UI.panY) / UI.scale;
+        nd.width = Math.max(80, mx - nd.x + UI.resizeOffX);
+        nd.height = Math.max(30, my - nd.y + UI.resizeOffY);
+        const el = document.getElementById(UI.resizeId);
+        if (el) {
+          const inner = el.querySelector('.node-text-inner');
+          if (inner) { inner.style.width = nd.width + 'px'; inner.style.minHeight = nd.height + 'px'; }
+        }
+        return;
+      }
       if (UI.isDrag && UI.dragId) {
         const f = af(); if (!f) return;
         let nd = f.nodes.find(n => n.id === UI.dragId);
@@ -5055,6 +5093,7 @@
       if (UI.connFrom) drawLines(e);
     });
     document.addEventListener('mouseup', e => {
+      if (UI.isResize) { UI.isResize = false; UI.resizeId = null; save(); return; }
       if (UI.isDrag) { UI.isDrag = false; if (UI.dragId) { pushUndo(); save(); UI.dragId = null; } }
       if (UI.connFrom) {
         const t = e.target.closest('.node');
@@ -5155,12 +5194,29 @@
       });
     }
 
-    function selectNode(id) {
-      if (UI.selId) { document.getElementById(UI.selId)?.classList.remove('selected'); }
-      UI.selId = id;
-      document.getElementById(id)?.classList.add('selected');
-      showPropsIfCollapsed();
-      renderProps(id);
+    function selectNode(id, additive) {
+      if (!additive) {
+        // Regular click: clear previous selection and multi-sel
+        if (UI.selId) document.getElementById(UI.selId)?.classList.remove('selected');
+        clearMultiSel();
+        UI.selId = id;
+        document.getElementById(id)?.classList.add('selected');
+        showPropsIfCollapsed();
+        renderProps(id);
+      } else {
+        // Shift+Click: toggle node in multi-sel without clearing others
+        if (UI.selId) document.getElementById(UI.selId)?.classList.remove('selected');
+        UI.selId = null; renderProps(null);
+        const idx = UI.multiSel.indexOf(id);
+        if (idx === -1) {
+          UI.multiSel.push(id);
+          document.getElementById(id)?.classList.add('multi-selected');
+        } else {
+          UI.multiSel.splice(idx, 1);
+          document.getElementById(id)?.classList.remove('multi-selected');
+        }
+        if (UI.multiSel.length > 0) toast(`${UI.multiSel.length} selecionados`);
+      }
     }
     function canvasClick(e) {
       if (!e.target.closest('.node')) {
@@ -5186,7 +5242,13 @@
     // SVG LINES
     // ══════════════════════════════════════════
     function getNodeCenter(nd) {
-      const bd = BLOCKS[nd.key]; if (!bd) return { x: nd.x + 70, y: nd.y + 40, r: nd.x + 140, l: nd.x };
+      // Text node
+      if (!BLOCKS[nd.key]) {
+        const w = nd.width || 200;
+        const h = nd.height || 40;
+        return { x: nd.x + w / 2, y: nd.y + h / 2, r: nd.x + w, l: nd.x };
+      }
+      const bd = BLOCKS[nd.key];
       if (bd.shape === 'page') return { x: nd.x + 77, y: nd.y + 70, r: nd.x + 155, l: nd.x };
       return { x: nd.x + 38, y: nd.y + 35, r: nd.x + 76, l: nd.x };
     }
@@ -5196,8 +5258,11 @@
       const wrap = document.getElementById('canvas-wrap').getBoundingClientRect();
       svg.innerHTML = `<defs><marker id="arr" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L0,7 L7,3.5 z" fill="#2563eb" opacity=".6"/></marker><marker id="arrp" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L0,7 L7,3.5 z" fill="#9ca3af" opacity=".5"/></marker></defs>`;
       f.connections.forEach(c => {
-        const fn = f.nodes.find(n => n.id === c.from);
-        const tn = f.nodes.find(n => n.id === c.to);
+        // Look up in both nodes and textNodes
+        let fn = f.nodes.find(n => n.id === c.from);
+        if (!fn && f.textNodes) fn = f.textNodes.find(n => n.id === c.from);
+        let tn = f.nodes.find(n => n.id === c.to);
+        if (!tn && f.textNodes) tn = f.textNodes.find(n => n.id === c.to);
         if (!fn || !tn) return;
         const fp = getNodeCenter(fn), tp = getNodeCenter(tn);
         const x1 = fp.r, y1 = fp.y, x2 = tp.l, y2 = tp.y;
@@ -5537,7 +5602,7 @@
       pushUndo();
       if (!f.textNodes) f.textNodes = [];
       const id = 't' + (++UI.nCounter);
-      const node = { id, x, y, text: 'Clique duas vezes para editar', fontSize: 14, color: '#1a1d23', bgColor: 'transparent' };
+      const node = { id, x, y, text: 'Clique duas vezes para editar', fontSize: 14, color: '#1a1d23', bgColor: 'transparent', width: 200, height: null };
       f.textNodes.push(node);
       renderTextNode(node);
       save();
@@ -5562,15 +5627,25 @@
     }
     function renderTextNode(node) {
       const el = document.createElement('div');
-      el.className = 'node' + (UI.selId === node.id ? ' selected' : '');
+      el.className = 'node' + (UI.selId === node.id ? ' selected' : '') + (UI.multiSel.includes(node.id) ? ' multi-selected' : '');
       el.id = node.id;
       el.style.left = node.x + 'px';
       el.style.top = node.y + 'px';
+      el.style.position = 'absolute';
       const bStyle = node.bold ? 'font-weight:bold;' : 'font-weight:500;';
       const iStyle = node.italic ? 'font-style:italic;' : 'font-style:normal;';
       const uStyle = node.underline ? 'text-decoration:underline;' : 'text-decoration:none;';
       const bgStyle = node.bgColor && node.bgColor !== 'transparent' ? `background:${node.bgColor};` : '';
-      el.innerHTML = `<div class="node-text-inner" style="${bgStyle}"><div class="node-text-content" style="font-size:${node.fontSize || 14}px;color:${node.color || '#ffffff'};${bStyle}${iStyle}${uStyle}">${node.text}</div></div><button class="node-del">×</button>`;
+      const wStyle = node.width ? `width:${node.width}px;` : '';
+      const hStyle = node.height ? `min-height:${node.height}px;` : '';
+      el.innerHTML = `
+        <div class="conn-in"></div>
+        <div class="node-text-inner" style="${bgStyle}${wStyle}${hStyle}position:relative;">
+          <div class="node-text-content" style="font-size:${node.fontSize || 14}px;color:${node.color || '#ffffff'};${bStyle}${iStyle}${uStyle}">${node.text}</div>
+          <div class="resize-handle"></div>
+        </div>
+        <button class="node-del">×</button>
+        <div class="conn-out"></div>`;
       const content = el.querySelector('.node-text-content');
       content.addEventListener('dblclick', () => {
         content.contentEditable = 'true'; content.focus();
@@ -5585,21 +5660,45 @@
         el.removeEventListener('mousedown', stopDragIfEditing, { capture: true });
       });
       function stopDragIfEditing(e) { if (content.contentEditable === 'true') e.stopPropagation(); }
+      // Delete button
       el.querySelector('.node-del').addEventListener('click', () => {
         const f = af(); if (f && f.textNodes) f.textNodes = f.textNodes.filter(n => n.id !== node.id);
-        el.remove(); if (UI.selId === node.id) { UI.selId = null; renderProps(null); } save();
+        if (f) f.connections = f.connections.filter(c => c.from !== node.id && c.to !== node.id);
+        el.remove(); if (UI.selId === node.id) { UI.selId = null; renderProps(null); } drawLines(); save();
       });
+      // Conn-out: start connection from text node
+      el.querySelector('.conn-out').addEventListener('mousedown', e => {
+        e.stopPropagation(); e.preventDefault(); UI.connFrom = node.id;
+      });
+      // Resize handle
+      el.querySelector('.resize-handle').addEventListener('mousedown', e => {
+        e.stopPropagation(); e.preventDefault();
+        UI.isResize = true; UI.resizeId = node.id;
+        const r = document.getElementById('canvas-wrap').getBoundingClientRect();
+        const mx = (e.clientX - r.left - UI.panX) / UI.scale;
+        const my = (e.clientY - r.top - UI.panY) / UI.scale;
+        UI.resizeOffX = (node.width || 200) - (mx - node.x);
+        UI.resizeOffY = (node.height || 40) - (my - node.y);
+      });
+      // Drag (move)
       el.addEventListener('mousedown', e => {
         if (content.contentEditable === 'true') return;
-        if (e.target.closest('.node-del')) return;
-        selectNode(node.id);
-        UI.isDrag = true; UI.dragId = node.id;
-        const r = document.getElementById('canvas-wrap').getBoundingClientRect();
-        UI.offX = (e.clientX - r.left - UI.panX) / UI.scale - node.x;
-        UI.offY = (e.clientY - r.top - UI.panY) / UI.scale - node.y;
+        if (e.target.closest('.node-del') || e.target.closest('.conn-out') || e.target.closest('.conn-in') || e.target.closest('.resize-handle')) return;
+        selectNode(node.id, e.shiftKey);
+        if (!e.shiftKey) {
+          UI.isDrag = true; UI.dragId = node.id;
+          const r = document.getElementById('canvas-wrap').getBoundingClientRect();
+          UI.offX = (e.clientX - r.left - UI.panX) / UI.scale - node.x;
+          UI.offY = (e.clientY - r.top - UI.panY) / UI.scale - node.y;
+          if (UI.multiSel.length > 1 && UI.multiSel.includes(node.id)) {
+            const mx = (e.clientX - r.left - UI.panX) / UI.scale;
+            const my = (e.clientY - r.top - UI.panY) / UI.scale;
+            UI._lastMultiDrag = { x: mx, y: my };
+          }
+        }
         e.preventDefault();
       });
-      el.addEventListener('click', e => { if (!e.target.closest('.node-del')) selectNode(node.id); });
+      el.addEventListener('click', e => { if (!e.target.closest('.node-del')) selectNode(node.id, e.shiftKey); });
       document.getElementById('canvas').appendChild(el);
     }
 
@@ -6157,32 +6256,40 @@ Use no máximo 12 blocos. Aplique as regras estratégicas do seu conhecimento. C
     async function doExport() {
       const f = af(); if (!f) { toast('Nenhum funil ativo'); return; }
       if (typeof html2canvas === 'undefined') { toast('html2canvas não carregado. Verifique sua conexão.'); return; }
-      const canvas = document.getElementById('canvas');
-      let el = canvas;
+      const canvasEl = document.getElementById('canvas');
+      let el = canvasEl;
       if (_exportScope === 'selection' && UI.selId) {
-        el = document.getElementById(UI.selId) || canvas;
+        el = document.getElementById(UI.selId) || canvasEl;
       }
       toast('Exportando PNG...');
       closeGenModal('export-overlay');
-      // Fix SVG connections: set explicit dimensions on #cvg so html2canvas captures it
+
+      // ── Save current transform and reset to identity ──
+      // html2canvas doesn't handle CSS transform well — coordinates go out of sync
+      const savedScale = UI.scale, savedPanX = UI.panX, savedPanY = UI.panY;
+      UI.scale = 1; UI.panX = 0; UI.panY = 0;
+      applyTransform();
+      drawLines(); // re-draw connections with identity transform coords
+
+      // ── Set explicit dimensions on #cvg so html2canvas captures it ──
       const cvg = document.getElementById('cvg');
       const bbox = getCanvasBoundingBox(f);
-      const svgW = bbox ? (bbox.x + bbox.width + 120) : 4000;
-      const svgH = bbox ? (bbox.y + bbox.height + 120) : 4000;
-      const origW = cvg.getAttribute('width');
-      const origH = cvg.getAttribute('height');
+      const svgW = bbox ? (bbox.x + bbox.width + 120) : 8000;
+      const svgH = bbox ? (bbox.y + bbox.height + 120) : 8000;
       cvg.setAttribute('width', svgW);
       cvg.setAttribute('height', svgH);
-      // Brief delay so browser paints the new SVG dimensions
-      await new Promise(r => setTimeout(r, 80));
+
+      // Brief delay so browser paints
+      await new Promise(r => setTimeout(r, 120));
+
       try {
         const opts = {
           backgroundColor: _exportBg === 'white' ? '#ffffff' : null,
           scale: 2, useCORS: true, allowTaint: true,
           logging: false,
         };
-        // Smart bounding box: crop to just the content area
-        if (_exportScope === 'all' && f.nodes.length > 0 && bbox) {
+        // Crop to just the content bounding box
+        if (_exportScope === 'all' && bbox) {
           opts.x = bbox.x;
           opts.y = bbox.y;
           opts.width = bbox.width;
@@ -6197,9 +6304,12 @@ Use no máximo 12 blocos. Aplique as regras estratégicas do seu conhecimento. C
       } catch (e) {
         console.error(e); toast('Erro ao exportar. Tente novamente.');
       } finally {
-        // Restore original SVG attributes
-        if (origW !== null) cvg.setAttribute('width', origW); else cvg.removeAttribute('width');
-        if (origH !== null) cvg.setAttribute('height', origH); else cvg.removeAttribute('height');
+        // Restore transform and SVG
+        cvg.removeAttribute('width');
+        cvg.removeAttribute('height');
+        UI.scale = savedScale; UI.panX = savedPanX; UI.panY = savedPanY;
+        applyTransform();
+        drawLines();
       }
     }
     function getCanvasBoundingBox(f) {

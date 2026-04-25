@@ -6323,7 +6323,8 @@ Use no máximo 12 blocos. Aplique as regras estratégicas do seu conhecimento. C
       let encoded = LZString.compressToEncodedURIComponent(json);
       const pw = document.getElementById('share-pw-input').value.trim();
       if (_sharePasswordEnabled && pw) { encoded = 'pw:' + xorEncode(encoded, pw); }
-      return location.origin + location.pathname + '#lz=' + encoded;
+      // Query param (?lz=) em vez de hash (#lz=) — encurtadores preservam query params
+      return location.origin + location.pathname + '?lz=' + encoded;
     }
     async function updateShareLink() {
       const f = af(); if (!f) return;
@@ -6333,12 +6334,17 @@ Use no máximo 12 blocos. Aplique as regras estratégicas do seu conhecimento. C
       linkEl.textContent = longUrl;
       statusEl.textContent = 'Encurtando…';
       try {
-        const resp = await fetch('https://is.gd/create.php?format=simple&url=' + encodeURIComponent(longUrl), { signal: AbortSignal.timeout(5000) });
+        const resp = await fetch('https://is.gd/create.php?format=simple&url=' + encodeURIComponent(longUrl), { signal: AbortSignal.timeout(6000) });
         if (!resp.ok) throw new Error('fail');
         const short = (await resp.text()).trim();
-        if (short.startsWith('http')) { linkEl.textContent = short; statusEl.textContent = '✓ link curto'; }
-        else { statusEl.textContent = 'link completo'; }
-      } catch { statusEl.textContent = 'link completo'; }
+        if (short.startsWith('http')) {
+          linkEl.textContent = short;
+          statusEl.textContent = '✓ link curto';
+        } else { statusEl.textContent = ''; }
+      } catch {
+        // Fallback silencioso: mantém a URL longa mas sem aviso de erro
+        statusEl.textContent = '';
+      }
     }
     function xorEncode(str, key) {
       let result = ''; for (let i = 0; i < str.length; i++)result += String.fromCharCode(str.charCodeAt(i) ^ key.charCodeAt(i % key.length));
@@ -6361,8 +6367,25 @@ Use no máximo 12 blocos. Aplique as regras estratégicas do seu conhecimento. C
       });
     }
     function checkSharedLink() {
+      // Novo formato: ?lz= (query param — funciona com encurtadores)
+      const params = new URLSearchParams(location.search);
+      const lzParam = params.get('lz');
+      if (lzParam) {
+        if (lzParam.startsWith('pw:')) {
+          _sharedEncoded = lzParam.slice(3);
+          document.getElementById('shared-pw-overlay').classList.add('open');
+          document.getElementById('shared-pw-overlay').style.display = 'flex';
+          return true;
+        }
+        try {
+          const raw = LZString.decompressFromEncodedURIComponent(lzParam);
+          const data = JSON.parse(raw);
+          loadSharedFunil(data.funil);
+          return true;
+        } catch (e) { return false; }
+      }
+      // Legado: #lz= (hash)
       const hash = location.hash;
-      // Novo formato: #lz=<lzstring>
       if (hash.startsWith('#lz=')) {
         const encoded = hash.slice(4);
         if (encoded.startsWith('pw:')) {
@@ -6378,7 +6401,7 @@ Use no máximo 12 blocos. Aplique as regras estratégicas do seu conhecimento. C
           return true;
         } catch (e) { return false; }
       }
-      // Formato legado: #share=<base64>
+      // Legado: #share= (base64 sem compressão)
       if (hash.startsWith('#share=')) {
         const encoded = hash.slice(7);
         if (encoded.startsWith('pw:')) {
@@ -6791,8 +6814,9 @@ Use no máximo 12 blocos. Aplique as regras estratégicas do seu conhecimento. C
     }
 
     function initAuth() {
-      // Check shared link first
-      if (location.hash.startsWith('#share=') || location.hash.startsWith('#lz=')) {
+      // Check shared link first (query param ou hash)
+      const _sp = new URLSearchParams(location.search);
+      if (_sp.has('lz') || _sp.has('share') || location.hash.startsWith('#share=') || location.hash.startsWith('#lz=')) {
         const session = getSession();
         if (session) { startApp(session); }
         else {

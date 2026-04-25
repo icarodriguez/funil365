@@ -5308,8 +5308,21 @@
           document.getElementById('p-italic').onclick = () => { nd.italic = !nd.italic; renderCanvas(); renderProps(id); save() };
           document.getElementById('p-underline').onclick = () => { nd.underline = !nd.underline; renderCanvas(); renderProps(id); save() };
           document.getElementById('p-fs').oninput = e => { nd.fontSize = parseInt(e.target.value); document.getElementById('p-fs-v').textContent = e.target.value + 'px'; renderCanvas(); save() };
-          document.getElementById('p-color').oninput = e => { nd.color = e.target.value; renderCanvas(); renderProps(id); save() };
-          document.getElementById('p-bgc').oninput = e => { nd.bgColor = e.target.value; renderCanvas(); renderProps(id); save() };
+          document.getElementById('p-color').oninput = e => {
+            nd.color = e.target.value;
+            // Update preview inline — do NOT call renderProps (would destroy the picker)
+            const prev = document.querySelector('#p-color ~ span'); if (prev) prev.textContent = e.target.value;
+            const prevBox = document.querySelector('#p-color'); if (prevBox) prevBox.previousElementSibling?.setAttribute('style', `width:32px;height:32px;border-radius:6px;background:${e.target.value};border:1px solid var(--border)`);
+            renderCanvas(); save();
+          };
+          document.getElementById('p-bgc').oninput = e => {
+            nd.bgColor = e.target.value;
+            // Update preview inline — do NOT call renderProps (would destroy the picker)
+            const prev = document.getElementById('p-bgc-preview'); if (prev) prev.style.cssText = `width:32px;height:32px;border-radius:6px;background:${e.target.value};border:1px solid var(--border)`;
+            const span = document.querySelector('#p-bgc ~ span'); if (span) span.textContent = e.target.value;
+            const clearBtn = document.getElementById('p-bgc-clear'); if (clearBtn) clearBtn.textContent = 'Limpar';
+            renderCanvas(); save();
+          };
           document.getElementById('p-bgc-clear').onclick = () => { nd.bgColor = 'transparent'; renderCanvas(); renderProps(id); save() };
         }
       }
@@ -6151,21 +6164,29 @@ Use no máximo 12 blocos. Aplique as regras estratégicas do seu conhecimento. C
       }
       toast('Exportando PNG...');
       closeGenModal('export-overlay');
+      // Fix SVG connections: set explicit dimensions on #cvg so html2canvas captures it
+      const cvg = document.getElementById('cvg');
+      const bbox = getCanvasBoundingBox(f);
+      const svgW = bbox ? (bbox.x + bbox.width + 120) : 4000;
+      const svgH = bbox ? (bbox.y + bbox.height + 120) : 4000;
+      const origW = cvg.getAttribute('width');
+      const origH = cvg.getAttribute('height');
+      cvg.setAttribute('width', svgW);
+      cvg.setAttribute('height', svgH);
+      // Brief delay so browser paints the new SVG dimensions
+      await new Promise(r => setTimeout(r, 80));
       try {
         const opts = {
           backgroundColor: _exportBg === 'white' ? '#ffffff' : null,
           scale: 2, useCORS: true, allowTaint: true,
           logging: false,
         };
-        // Smart bounding box: detect the area containing all elements
-        if (_exportScope === 'all' && f.nodes.length > 0) {
-          const bbox = getCanvasBoundingBox(f);
-          if (bbox) {
-            opts.x = bbox.x;
-            opts.y = bbox.y;
-            opts.width = bbox.width;
-            opts.height = bbox.height;
-          }
+        // Smart bounding box: crop to just the content area
+        if (_exportScope === 'all' && f.nodes.length > 0 && bbox) {
+          opts.x = bbox.x;
+          opts.y = bbox.y;
+          opts.width = bbox.width;
+          opts.height = bbox.height;
         }
         const hc = await html2canvas(el, opts);
         const link = document.createElement('a');
@@ -6175,6 +6196,10 @@ Use no máximo 12 blocos. Aplique as regras estratégicas do seu conhecimento. C
         toast('✓ PNG exportado!');
       } catch (e) {
         console.error(e); toast('Erro ao exportar. Tente novamente.');
+      } finally {
+        // Restore original SVG attributes
+        if (origW !== null) cvg.setAttribute('width', origW); else cvg.removeAttribute('width');
+        if (origH !== null) cvg.setAttribute('height', origH); else cvg.removeAttribute('height');
       }
     }
     function getCanvasBoundingBox(f) {

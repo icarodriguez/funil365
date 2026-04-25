@@ -3754,6 +3754,32 @@
     </div>
   </div>
 
+  <!-- Visitor Name Modal -->
+  <div id="visitor-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);z-index:99999;align-items:center;justify-content:center;font-family:var(--font)">
+    <div style="background:linear-gradient(145deg,#1e293b,#0f172a);border:1px solid #334155;border-radius:20px;width:420px;padding:40px;box-shadow:0 40px 80px rgba(0,0,0,.5)">
+      <div style="text-align:center;margin-bottom:28px">
+        <div style="width:56px;height:56px;background:linear-gradient(135deg,#2563eb,#7c3aed);border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </div>
+        <div style="font-size:20px;font-weight:700;color:#f1f5f9;margin-bottom:6px">Visualizar Funil</div>
+        <div style="font-size:13px;color:#64748b;line-height:1.5">Você foi convidado para visualizar este mapa de funil.<br>Digite seu nome para continuar.</div>
+      </div>
+      <div style="margin-bottom:16px">
+        <label style="display:block;font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Seu nome</label>
+        <input id="visitor-name-inp" type="text" placeholder="Ex: João Silva"
+          style="width:100%;box-sizing:border-box;padding:12px 16px;background:#0f172a;border:1.5px solid #334155;border-radius:10px;color:#f1f5f9;font-size:14px;font-family:var(--font);outline:none;transition:border-color .2s"
+          onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#334155'"
+          onkeydown="if(event.key==='Enter')enterSharedView()" />
+      </div>
+      <button onclick="enterSharedView()"
+        style="width:100%;padding:13px;background:linear-gradient(135deg,#2563eb,#7c3aed);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font);letter-spacing:.02em"
+        onmouseover="this.style.opacity='.9'" onmouseout="this.style.opacity='1'">
+        Entrar como Visitante →
+      </button>
+      <div style="text-align:center;margin-top:14px;font-size:11px;color:#475569">🔒 Acesso somente leitura · Sem criação de conta</div>
+    </div>
+  </div>
+
   <!-- Cursor Label -->
   <div id="cursor-label"><span id="cursor-label-name">User</span></div>
   <div id="toast"></div>
@@ -5027,18 +5053,22 @@
       el.addEventListener('mousedown', e => {
         if (e.target.closest('.node-del') || e.target.closest('.conn-out') || e.target.closest('.conn-in')) return;
         if (e.altKey) { e.preventDefault(); duplicateNode(node.id); return; }
-        selectNode(node.id, e.shiftKey);
-        if (!e.shiftKey) {
-          UI.isDrag = true; UI.dragId = node.id;
-          const r = document.getElementById('canvas-wrap').getBoundingClientRect();
-          UI.offX = (e.clientX - r.left - UI.panX) / UI.scale - node.x;
-          UI.offY = (e.clientY - r.top - UI.panY) / UI.scale - node.y;
-          // Initialize multi-drag tracking
-          if (UI.multiSel.length > 1 && UI.multiSel.includes(node.id)) {
-            const mx = (e.clientX - r.left - UI.panX) / UI.scale;
-            const my = (e.clientY - r.top - UI.panY) / UI.scale;
-            UI._lastMultiDrag = { x: mx, y: my };
-          }
+        const r = document.getElementById('canvas-wrap').getBoundingClientRect();
+        const mx = (e.clientX - r.left - UI.panX) / UI.scale;
+        const my = (e.clientY - r.top - UI.panY) / UI.scale;
+        if (e.shiftKey) {
+          // Shift+Click: toggle in multi-sel
+          selectNode(node.id, true);
+        } else if (UI.multiSel.length > 1 && UI.multiSel.includes(node.id)) {
+          // Click on already-selected node: start group drag WITHOUT clearing selection
+          UI.isDrag = true; UI.dragId = node.id; UI._dragMoved = false;
+          UI._lastMultiDrag = { x: mx, y: my };
+        } else {
+          // Regular click: select and start single drag
+          selectNode(node.id, false);
+          UI.isDrag = true; UI.dragId = node.id; UI._dragMoved = false;
+          UI.offX = mx - node.x;
+          UI.offY = my - node.y;
         }
         e.preventDefault();
       });
@@ -5126,13 +5156,18 @@
             if (el) { el.style.left = nd.x + 'px'; el.style.top = nd.y + 'px'; }
           }
         }
+        UI._dragMoved = true;
         drawLines();
       }
       if (UI.connFrom) drawLines(e);
     });
     document.addEventListener('mouseup', e => {
       if (UI.isResize) { UI.isResize = false; UI.resizeId = null; save(); return; }
-      if (UI.isDrag) { UI.isDrag = false; if (UI.dragId) { pushUndo(); save(); UI.dragId = null; } }
+      if (UI.isDrag) {
+        UI.isDrag = false;
+        if (UI.dragId && UI._dragMoved) { pushUndo(); save(); } // only push undo if actually moved
+        UI.dragId = null; UI._dragMoved = false;
+      }
       if (UI.connFrom) {
         const t = e.target.closest('.node');
         if (t && t.id !== UI.connFrom) addConn(UI.connFrom, t.id);
@@ -5782,17 +5817,20 @@
       el.addEventListener('mousedown', e => {
         if (content.contentEditable === 'true') return;
         if (e.target.closest('.node-del') || e.target.closest('.conn-out') || e.target.closest('.conn-in') || e.target.closest('.resize-handle')) return;
-        selectNode(node.id, e.shiftKey);
-        if (!e.shiftKey) {
-          UI.isDrag = true; UI.dragId = node.id;
-          const r = document.getElementById('canvas-wrap').getBoundingClientRect();
-          UI.offX = (e.clientX - r.left - UI.panX) / UI.scale - node.x;
-          UI.offY = (e.clientY - r.top - UI.panY) / UI.scale - node.y;
-          if (UI.multiSel.length > 1 && UI.multiSel.includes(node.id)) {
-            const mx = (e.clientX - r.left - UI.panX) / UI.scale;
-            const my = (e.clientY - r.top - UI.panY) / UI.scale;
-            UI._lastMultiDrag = { x: mx, y: my };
-          }
+        const r = document.getElementById('canvas-wrap').getBoundingClientRect();
+        const mx = (e.clientX - r.left - UI.panX) / UI.scale;
+        const my = (e.clientY - r.top - UI.panY) / UI.scale;
+        if (e.shiftKey) {
+          selectNode(node.id, true);
+        } else if (UI.multiSel.length > 1 && UI.multiSel.includes(node.id)) {
+          // Group drag: preserve selection
+          UI.isDrag = true; UI.dragId = node.id; UI._dragMoved = false;
+          UI._lastMultiDrag = { x: mx, y: my };
+        } else {
+          selectNode(node.id, false);
+          UI.isDrag = true; UI.dragId = node.id; UI._dragMoved = false;
+          UI.offX = mx - node.x;
+          UI.offY = my - node.y;
         }
         e.preventDefault();
       });
@@ -6334,17 +6372,53 @@ Use no máximo 12 blocos. Aplique as regras estratégicas do seu conhecimento. C
       }
     }
     function loadSharedFunil(funil) {
-      // Show read-only view
+      // Store funil data and show visitor name modal
+      UI._sharedFunil = funil;
+      const modal = document.getElementById('visitor-modal');
+      if (modal) {
+        modal.style.display = 'flex';
+        setTimeout(() => document.getElementById('visitor-name-inp')?.focus(), 100);
+      } else {
+        _enterSharedView(funil, 'Visitante');
+      }
+    }
+    function enterSharedView() {
+      const name = (document.getElementById('visitor-name-inp')?.value || '').trim();
+      if (!name) { document.getElementById('visitor-name-inp')?.focus(); return; }
+      document.getElementById('visitor-modal').style.display = 'none';
+      _enterSharedView(UI._sharedFunil, name);
+    }
+    function _enterSharedView(funil, visitorName) {
       const f = { ...funil, id: 'shared_' + Date.now() };
       STATE.funils = [f]; STATE.activeId = f.id;
-      startApp(getSession() || { id: 'guest', name: 'Visitante', email: '' });
-      renderTabs(); renderCanvas();
-      toast('Visualizando funil compartilhado (somente leitura)');
-      // Disable editing UI
-      document.getElementById('sidebar').style.opacity = '0.4';
-      document.getElementById('sidebar').style.pointerEvents = 'none';
-      document.getElementById('props').style.opacity = '0.4';
-      document.getElementById('props').style.pointerEvents = 'none';
+      UI.readOnly = true;
+      UI.visitorName = visitorName;
+      startApp({ id: 'guest', name: visitorName, email: '' });
+      renderTabs(); renderCanvas(); drawLines();
+      // Hide all editing UI
+      document.getElementById('sidebar').style.display = 'none';
+      document.getElementById('props').style.display = 'none';
+      document.getElementById('draw-toolbar').style.display = 'none';
+      document.querySelector('.tab-bar')?.style && (document.querySelector('.nav-actions').style.display = 'none');
+      // Show read-only banner
+      const banner = document.createElement('div');
+      banner.id = 'readonly-banner';
+      banner.style.cssText = 'position:fixed;top:0;left:0;right:0;height:44px;background:linear-gradient(135deg,#1e293b,#0f172a);display:flex;align-items:center;justify-content:space-between;padding:0 20px;z-index:9999;font-family:var(--font);box-shadow:0 2px 12px rgba(0,0,0,.3)';
+      banner.innerHTML = `
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:8px;height:8px;background:#22c55e;border-radius:50%"></div>
+          <span style="color:#fff;font-weight:700;font-size:14px">Funil365</span>
+          <span style="color:#64748b;font-size:12px">— visualizando como <strong style="color:#94a3b8">${visitorName}</strong></span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="color:#475569;font-size:11px">Somente leitura</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        </div>`;
+      document.body.appendChild(banner);
+      // Adjust canvas area
+      const cw = document.getElementById('canvas-wrap');
+      if (cw) cw.style.top = '44px';
+      toast(`Bem-vindo, ${visitorName}! Modo somente leitura.`);
     }
 
     // ══════════════════════════════════════════

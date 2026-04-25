@@ -1181,6 +1181,21 @@
       min-height: 20px
     }
 
+    /* ── SELECTION RECT ── */
+    .selection-rect {
+      position: absolute;
+      border: 1.5px dashed rgba(37, 99, 235, .6);
+      background: rgba(37, 99, 235, .08);
+      pointer-events: none;
+      z-index: 9999;
+      border-radius: 3px;
+    }
+    .node.multi-selected {
+      outline: 2px solid rgba(37, 99, 235, .5);
+      outline-offset: 3px;
+      border-radius: 8px;
+    }
+
     /* ── PROPS PANEL ── */
     #props {
       width: var(--props);
@@ -3354,15 +3369,7 @@
           <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" />
           <path d="M20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />
         </svg>
-        <span class="tooltip">Caneta (P)</span>
-      </div>
-      <div class="draw-btn" id="tool-marker" onclick="setTool('marker')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-          stroke-linejoin="round">
-          <path d="M12 19l7-7 3 3-7 7-3-3z" />
-          <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z" />
-        </svg>
-        <span class="tooltip">Marcador (M)</span>
+        <span class="tooltip">Lápis (P)</span>
       </div>
       <div class="draw-btn" id="tool-text" onclick="setTool('text')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -3380,13 +3387,13 @@
         </svg>
         <span class="tooltip">Borracha (E)</span>
       </div>
-      <div class="draw-btn" id="tool-undo" onclick="undoDraw()">
+      <div class="draw-btn" id="tool-undo" onclick="undo()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
           stroke-linejoin="round">
           <path d="M3 7v6h6" />
           <path d="M21 17a9 9 0 00-9-9 9 9 0 00-6 2.3L3 13" />
         </svg>
-        <span class="tooltip">Desfazer (Ctrl+Z)</span>
+        <span class="tooltip">Desfazer (⌘Z)</span>
       </div>
       <div class="draw-sep"></div>
       <div class="draw-colors">
@@ -4987,6 +4994,12 @@
         const r = document.getElementById('canvas-wrap').getBoundingClientRect();
         UI.offX = (e.clientX - r.left - UI.panX) / UI.scale - node.x;
         UI.offY = (e.clientY - r.top - UI.panY) / UI.scale - node.y;
+        // Initialize multi-drag tracking
+        if (UI.multiSel.length > 1 && UI.multiSel.includes(node.id)) {
+          const mx = (e.clientX - r.left - UI.panX) / UI.scale;
+          const my = (e.clientY - r.top - UI.panY) / UI.scale;
+          UI._lastMultiDrag = { x: mx, y: my };
+        }
         e.preventDefault();
       });
       el.addEventListener('click', e => { if (!e.target.closest('.node-del')) selectNode(node.id); });
@@ -5042,7 +5055,7 @@
       if (UI.connFrom) drawLines(e);
     });
     document.addEventListener('mouseup', e => {
-      if (UI.isDrag) { UI.isDrag = false; if (UI.dragId) { save(); UI.dragId = null; } }
+      if (UI.isDrag) { UI.isDrag = false; if (UI.dragId) { pushUndo(); save(); UI.dragId = null; } }
       if (UI.connFrom) {
         const t = e.target.closest('.node');
         if (t && t.id !== UI.connFrom) addConn(UI.connFrom, t.id);
@@ -5051,6 +5064,7 @@
     });
     function addNode(key, x, y) {
       const f = af(); if (!f) return;
+      pushUndo();
       const bd = BLOCKS[key]; if (!bd) return;
       const id = 'n' + (++UI.nCounter);
       const node = { id, key, x, y, title: bd.label, note: '', url: '', conv: bd.conv, impressoes: 0, leads: 0, vendas: 0, receita: 0 };
@@ -5066,6 +5080,7 @@
     function pasteNode() {
       if (!UI.clipboard) return;
       const f = af(); if (!f) return;
+      pushUndo();
       const src = UI.clipboard;
       const id = 'n' + (++UI.nCounter);
       const node = { ...src, id, x: src.x + 40, y: src.y + 40, impressoes: 0, leads: 0, vendas: 0, receita: 0 };
@@ -5074,6 +5089,7 @@
     }
     function duplicateNode(id) {
       const f = af(); if (!f) return;
+      pushUndo();
       const nd = f.nodes.find(n => n.id === id); if (!nd) return;
       const newId = 'n' + (++UI.nCounter);
       const copy = { ...nd, id: newId, x: nd.x + 40, y: nd.y + 40, impressoes: 0, leads: 0, vendas: 0, receita: 0 };
@@ -5086,6 +5102,7 @@
     function addConn(from, to) {
       const f = af(); if (!f) return;
       if (f.connections.find(c => c.from === from && c.to === to)) return;
+      pushUndo();
       f.connections.push({ id: 'c' + (++UI.cCounter), from, to });
       drawLines(); updateStats(); save();
     }
@@ -5253,7 +5270,7 @@
       <div class="prow"><label>Receita (R$)</label><input id="p-rec" type="number" min="0" value="${nd.receita || 0}"/></div>
       <div class="prow"><label>Notas / Script</label><textarea id="p-note" placeholder="URL, copy, observações...">${nd.note || ''}</textarea></div>
       <div class="pdanger" onclick="deleteNode('${id}')"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 2l9 9M11 2L2 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Remover bloco</div>`;
-        const bind = (eid, prop, isNum) => document.getElementById(eid)?.addEventListener('change', e => { nd[prop] = isNum ? Number(e.target.value) : e.target.value; if (isNum) { renderCanvas(); renderProps(id); } save(); });
+        const bind = (eid, prop, isNum) => document.getElementById(eid)?.addEventListener('input', e => { nd[prop] = isNum ? Number(e.target.value) : e.target.value; if (prop === 'title') { const nodeEl = document.getElementById(id); if (nodeEl) { const lbl = nodeEl.querySelector('.node-label'); if (lbl) lbl.textContent = e.target.value; const pbl = nodeEl.querySelector('.page-label'); if (pbl) pbl.textContent = e.target.value; const pbt = nodeEl.querySelector('.page-bar-title'); if (pbt) pbt.textContent = e.target.value; } } if (isNum) { renderCanvas(); renderProps(id); } save(); });
         bind('p-name', 'title'); bind('p-url', 'url'); bind('p-imp', 'impressoes', true); bind('p-lead', 'leads', true); bind('p-vend', 'vendas', true); bind('p-rec', 'receita', true); bind('p-note', 'note');
         document.getElementById('p-conv')?.addEventListener('input', e => { nd.conv = parseInt(e.target.value); document.getElementById('p-conv-v').textContent = nd.conv + '%'; updateStats(); drawLines(); save(); });
       } else if (f.textNodes) {
@@ -5278,12 +5295,22 @@
              <span style="font-family:var(--mono);font-size:12px;color:var(--text2)">${nd.color || '#ffffff'}</span>
            </div>
         </div>
+        <div class="prow"><label>Cor de fundo</label>
+           <div style="display:flex;align-items:center;gap:8px;position:relative">
+             <div id="p-bgc-preview" style="width:32px;height:32px;border-radius:6px;background:${nd.bgColor || 'transparent'};border:1px solid var(--border);${!nd.bgColor || nd.bgColor === 'transparent' ? 'background-image:linear-gradient(45deg,#ccc 25%,transparent 25%,transparent 75%,#ccc 75%,#ccc),linear-gradient(45deg,#ccc 25%,transparent 25%,transparent 75%,#ccc 75%,#ccc);background-size:8px 8px;background-position:0 0,4px 4px;' : ''}"></div>
+             <input type="color" id="p-bgc" value="${nd.bgColor && nd.bgColor !== 'transparent' ? nd.bgColor : '#ffffff'}" style="opacity:0;position:absolute;left:0;top:0;width:32px;height:32px;cursor:pointer"/>
+             <span style="font-family:var(--mono);font-size:12px;color:var(--text2)">${nd.bgColor || 'transparent'}</span>
+             <button id="p-bgc-clear" class="mbtn cancel" style="padding:3px 8px;font-size:11px;margin-left:auto">${!nd.bgColor || nd.bgColor === 'transparent' ? '✓ Sem fundo' : 'Limpar'}</button>
+           </div>
+        </div>
         <div class="pdanger" style="margin-top:20px" onclick="deleteNode('${id}')"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 2l9 9M11 2L2 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Remover texto</div>`;
           document.getElementById('p-bold').onclick = () => { nd.bold = !nd.bold; renderCanvas(); renderProps(id); save() };
           document.getElementById('p-italic').onclick = () => { nd.italic = !nd.italic; renderCanvas(); renderProps(id); save() };
           document.getElementById('p-underline').onclick = () => { nd.underline = !nd.underline; renderCanvas(); renderProps(id); save() };
           document.getElementById('p-fs').oninput = e => { nd.fontSize = parseInt(e.target.value); document.getElementById('p-fs-v').textContent = e.target.value + 'px'; renderCanvas(); save() };
           document.getElementById('p-color').oninput = e => { nd.color = e.target.value; renderCanvas(); renderProps(id); save() };
+          document.getElementById('p-bgc').oninput = e => { nd.bgColor = e.target.value; renderCanvas(); renderProps(id); save() };
+          document.getElementById('p-bgc-clear').onclick = () => { nd.bgColor = 'transparent'; renderCanvas(); renderProps(id); save() };
         }
       }
     }
@@ -5293,7 +5320,7 @@
     // ══════════════════════════════════════════
     function showCtx(x, y) { const m = document.getElementById('ctx'); m.style.display = 'block'; m.style.left = x + 'px'; m.style.top = y + 'px'; }
     function hideCtx() { document.getElementById('ctx').style.display = 'none'; }
-    function ctxDup() { const f = af(); if (!f || !UI.ctxId) return; const orig = f.nodes.find(n => n.id === UI.ctxId); if (!orig) return; const id = 'n' + (++UI.nCounter); f.nodes.push({ ...orig, id, x: orig.x + 20, y: orig.y + 20 }); renderCanvas(); save(); hideCtx(); toast('Bloco duplicado'); }
+    function ctxDup() { const f = af(); if (!f || !UI.ctxId) return; pushUndo(); const orig = f.nodes.find(n => n.id === UI.ctxId); if (!orig) return; const id = 'n' + (++UI.nCounter); f.nodes.push({ ...orig, id, x: orig.x + 20, y: orig.y + 20 }); renderCanvas(); save(); hideCtx(); toast('Bloco duplicado'); }
     function ctxConn() { UI.connFrom = UI.ctxId; hideCtx(); toast('Clique em outro bloco para conectar'); }
     function ctxDel() { deleteNode(UI.ctxId); hideCtx(); }
     document.addEventListener('click', e => { if (!e.target.closest('#ctx')) hideCtx(); });
@@ -5313,6 +5340,7 @@
     function clearCanvas() {
       const f = af(); if (!f) return;
       if (!confirm('Limpar todos os blocos deste funil?')) return;
+      pushUndo();
       f.nodes = []; f.connections = []; f.textNodes = []; f.drawPaths = [];
       renderCanvas(); renderProps(null); UI.selId = null;
       const dc = document.getElementById('draw-canvas'); if (dc) dc.innerHTML = '';
@@ -5339,6 +5367,47 @@
     document.addEventListener('keyup', e => {
       if (e.key === ' ') { UI.spaceDown = false; if (!UI.isPan) cWrap.style.cursor = ''; }
     });
+
+    // ══════════════════════════════════════════
+    // UNDO / REDO SYSTEM (global)
+    // ══════════════════════════════════════════
+    const UNDO_LIMIT = 50;
+    let undoStack = [];
+    let redoStack = [];
+    function snapshotFunil() {
+      const f = af(); if (!f) return null;
+      return JSON.stringify({ nodes: f.nodes, connections: f.connections, textNodes: f.textNodes || [], drawPaths: f.drawPaths || [] });
+    }
+    function pushUndo() {
+      const snap = snapshotFunil(); if (!snap) return;
+      undoStack.push(snap);
+      if (undoStack.length > UNDO_LIMIT) undoStack.shift();
+      redoStack = [];
+    }
+    function undo() {
+      if (undoStack.length === 0) { toast('Nada para desfazer'); return; }
+      const currentSnap = snapshotFunil();
+      if (currentSnap) redoStack.push(currentSnap);
+      const prev = undoStack.pop();
+      const data = JSON.parse(prev);
+      const f = af(); if (!f) return;
+      f.nodes = data.nodes; f.connections = data.connections; f.textNodes = data.textNodes; f.drawPaths = data.drawPaths;
+      UI.selId = null;
+      renderCanvas(); renderProps(null); redrawnPaths(); save();
+      toast('↩ Desfeito');
+    }
+    function redo() {
+      if (redoStack.length === 0) { toast('Nada para refazer'); return; }
+      const currentSnap = snapshotFunil();
+      if (currentSnap) undoStack.push(currentSnap);
+      const next = redoStack.pop();
+      const data = JSON.parse(next);
+      const f = af(); if (!f) return;
+      f.nodes = data.nodes; f.connections = data.connections; f.textNodes = data.textNodes; f.drawPaths = data.drawPaths;
+      UI.selId = null;
+      renderCanvas(); renderProps(null); redrawnPaths(); save();
+      toast('↪ Refeito');
+    }
 
     // ══════════════════════════════════════════
     // DRAW ENGINE (SVG-based)
@@ -5368,12 +5437,6 @@
       document.querySelectorAll('.draw-sz-dot').forEach(e => e.classList.remove('active'));
       if (el) el.classList.add('active');
     }
-    function undoDraw() {
-      const svg = document.getElementById('draw-canvas');
-      const f = af();
-      if (f && f.drawPaths && f.drawPaths.length > 0) { f.drawPaths.pop(); save(); }
-      if (svg && svg.lastChild) svg.removeChild(svg.lastChild);
-    }
     function redrawnPaths() {
       const svg = document.getElementById('draw-canvas'); if (!svg) return;
       svg.innerHTML = '';
@@ -5402,13 +5465,11 @@
       currentPathData = `M${rx},${ry}`;
       const svg = document.getElementById('draw-canvas');
       currentPathEl = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-      const isMarker = drawState.active === 'marker';
       currentPathEl.setAttribute('stroke', drawState.color);
-      currentPathEl.setAttribute('stroke-width', isMarker ? drawState.size * 3 : drawState.size);
+      currentPathEl.setAttribute('stroke-width', drawState.size);
       currentPathEl.setAttribute('fill', 'none');
       currentPathEl.setAttribute('stroke-linecap', 'round');
       currentPathEl.setAttribute('stroke-linejoin', 'round');
-      if (isMarker) currentPathEl.setAttribute('opacity', '0.4');
       currentPathEl.setAttribute('d', currentPathData);
       svg.appendChild(currentPathEl);
       e.preventDefault();
@@ -5424,11 +5485,11 @@
     window.addEventListener('mouseup', e => {
       if (!drawState.isDrawing || !currentPathEl) return;
       drawState.isDrawing = false;
-      const isMarker = drawState.active === 'marker';
       const f = af();
       if (f) {
+        pushUndo();
         if (!f.drawPaths) f.drawPaths = [];
-        f.drawPaths.push({ d: currentPathData, c: drawState.color, w: isMarker ? drawState.size * 3 : drawState.size, op: isMarker ? '0.4' : null });
+        f.drawPaths.push({ d: currentPathData, c: drawState.color, w: drawState.size, op: null });
         save();
       }
       currentPathEl = null;
@@ -5443,10 +5504,11 @@
     });
     document.addEventListener('keydown', e => {
       if (e.target.closest('input,textarea,[contenteditable]')) return;
-      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && drawState.active !== 'cursor') { e.preventDefault(); undoDraw(); }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo(); return; }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && e.shiftKey) { e.preventDefault(); redo(); return; }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'y') { e.preventDefault(); redo(); return; }
       if (e.key === 'v') setTool('cursor');
       if (e.key === 'p') setTool('brush');
-      if (e.key === 'm') setTool('marker');
       if (e.key === 'e') setTool('eraser');
       if (e.key === 't') setTool('text');
       if ((e.ctrlKey || e.metaKey) && (e.key === '=' || e.key === '+')) { e.preventDefault(); zoomStep(1); }
@@ -5459,9 +5521,10 @@
     // ══════════════════════════════════════════
     function addTextNode(x, y) {
       const f = af(); if (!f) return;
+      pushUndo();
       if (!f.textNodes) f.textNodes = [];
       const id = 't' + (++UI.nCounter);
-      const node = { id, x, y, text: 'Clique duas vezes para editar', fontSize: 14, color: '#1a1d23' };
+      const node = { id, x, y, text: 'Clique duas vezes para editar', fontSize: 14, color: '#1a1d23', bgColor: 'transparent' };
       f.textNodes.push(node);
       renderTextNode(node);
       save();
@@ -5476,6 +5539,7 @@
     }
     function deleteNode(id) {
       const f = af(); if (!f) return;
+      pushUndo();
       f.nodes = f.nodes.filter(n => n.id !== id);
       if (f.textNodes) f.textNodes = f.textNodes.filter(n => n.id !== id);
       f.connections = f.connections.filter(c => c.from !== id && c.to !== id);
@@ -5492,7 +5556,8 @@
       const bStyle = node.bold ? 'font-weight:bold;' : 'font-weight:500;';
       const iStyle = node.italic ? 'font-style:italic;' : 'font-style:normal;';
       const uStyle = node.underline ? 'text-decoration:underline;' : 'text-decoration:none;';
-      el.innerHTML = `<div class="node-text-inner"><div class="node-text-content" style="font-size:${node.fontSize || 14}px;color:${node.color || '#ffffff'};${bStyle}${iStyle}${uStyle}">${node.text}</div></div><button class="node-del">×</button>`;
+      const bgStyle = node.bgColor && node.bgColor !== 'transparent' ? `background:${node.bgColor};` : '';
+      el.innerHTML = `<div class="node-text-inner" style="${bgStyle}"><div class="node-text-content" style="font-size:${node.fontSize || 14}px;color:${node.color || '#ffffff'};${bStyle}${iStyle}${uStyle}">${node.text}</div></div><button class="node-del">×</button>`;
       const content = el.querySelector('.node-text-content');
       content.addEventListener('dblclick', () => {
         content.contentEditable = 'true'; content.focus();
@@ -5554,17 +5619,111 @@
     function zoomReset() {
       UI.scale = 1; UI.panX = 0; UI.panY = 0; applyTransform();
     }
+    // ══════════════════════════════════════════
+    // MARQUEE SELECTION
+    // ══════════════════════════════════════════
+    UI.multiSel = []; // IDs of multi-selected nodes
+    let marquee = { active: false, startX: 0, startY: 0, el: null };
+
+    function clearMultiSel() {
+      document.querySelectorAll('.node.multi-selected').forEach(n => n.classList.remove('multi-selected'));
+      UI.multiSel = [];
+    }
+
     const cWrap = document.getElementById('canvas-wrap');
     cWrap.addEventListener('mousedown', e => {
-      if (e.target.closest('.node')) return;
-      const isPanBtn = e.button === 1 || (e.button === 0 && (UI.spaceDown || drawState.active === 'cursor'));
+      if (e.target.closest('.node')) { clearMultiSel(); return; }
+      // Middle mouse or space = pan always
+      const isPanBtn = e.button === 1 || (e.button === 0 && UI.spaceDown);
       if (isPanBtn) {
         UI.isPan = true; UI.panStartX = e.clientX - UI.panX; UI.panStartY = e.clientY - UI.panY;
         cWrap.style.cursor = 'grabbing'; e.preventDefault();
+        return;
+      }
+      // In cursor mode, left click on empty = marquee selection
+      if (e.button === 0 && drawState.active === 'cursor' && !e.target.closest('#draw-toolbar') && !e.target.closest('#ai-chat-wrap')) {
+        clearMultiSel();
+        marquee.active = true;
+        marquee.startX = e.clientX;
+        marquee.startY = e.clientY;
+        marquee.el = document.createElement('div');
+        marquee.el.className = 'selection-rect';
+        marquee.el.style.left = e.clientX + 'px';
+        marquee.el.style.top = e.clientY + 'px';
+        marquee.el.style.width = '0px';
+        marquee.el.style.height = '0px';
+        marquee.el.style.position = 'fixed';
+        document.body.appendChild(marquee.el);
+        e.preventDefault();
       }
     });
-    window.addEventListener('mousemove', e => { if (UI.isPan) { UI.panX = e.clientX - UI.panStartX; UI.panY = e.clientY - UI.panStartY; applyTransform(); } });
-    window.addEventListener('mouseup', e => { if (UI.isPan) { UI.isPan = false; cWrap.style.cursor = UI.spaceDown ? 'grab' : ''; } });
+    window.addEventListener('mousemove', e => {
+      if (UI.isPan) { UI.panX = e.clientX - UI.panStartX; UI.panY = e.clientY - UI.panStartY; applyTransform(); }
+      if (marquee.active && marquee.el) {
+        const x = Math.min(e.clientX, marquee.startX);
+        const y = Math.min(e.clientY, marquee.startY);
+        const w = Math.abs(e.clientX - marquee.startX);
+        const h = Math.abs(e.clientY - marquee.startY);
+        marquee.el.style.left = x + 'px';
+        marquee.el.style.top = y + 'px';
+        marquee.el.style.width = w + 'px';
+        marquee.el.style.height = h + 'px';
+      }
+      // Multi-sel drag: move all selected nodes together
+      if (UI.isDrag && UI.dragId && UI.multiSel.length > 1 && UI.multiSel.includes(UI.dragId)) {
+        const f = af(); if (!f) return;
+        const r = cWrap.getBoundingClientRect();
+        const mx = (e.clientX - r.left - UI.panX) / UI.scale;
+        const my = (e.clientY - r.top - UI.panY) / UI.scale;
+        if (!UI._lastMultiDrag) UI._lastMultiDrag = { x: mx, y: my };
+        const dx = mx - UI._lastMultiDrag.x;
+        const dy = my - UI._lastMultiDrag.y;
+        UI._lastMultiDrag = { x: mx, y: my };
+        UI.multiSel.forEach(nid => {
+          let nd = f.nodes.find(n => n.id === nid);
+          if (!nd && f.textNodes) nd = f.textNodes.find(n => n.id === nid);
+          if (nd) {
+            nd.x += dx; nd.y += dy;
+            const el = document.getElementById(nid);
+            if (el) { el.style.left = nd.x + 'px'; el.style.top = nd.y + 'px'; }
+          }
+        });
+        drawLines();
+      }
+    });
+    window.addEventListener('mouseup', e => {
+      if (UI.isPan) { UI.isPan = false; cWrap.style.cursor = UI.spaceDown ? 'grab' : ''; }
+      if (UI.isDrag && UI.multiSel.length > 1) { UI._lastMultiDrag = null; }
+      if (marquee.active) {
+        marquee.active = false;
+        if (marquee.el) {
+          const rect = marquee.el.getBoundingClientRect();
+          marquee.el.remove();
+          marquee.el = null;
+          // Only select if dragged more than 5px (not just a click)
+          if (rect.width > 5 && rect.height > 5) {
+            const f = af(); if (!f) return;
+            const wrapR = cWrap.getBoundingClientRect();
+            const allNodes = [...f.nodes, ...(f.textNodes || [])];
+            allNodes.forEach(nd => {
+              const bd = BLOCKS[nd.key];
+              const nw = bd ? (bd.shape === 'page' ? 155 : 76) : 120;
+              const nh = bd ? (bd.shape === 'page' ? 145 : 80) : 40;
+              // Convert node coords to screen coords
+              const sx = nd.x * UI.scale + UI.panX + wrapR.left;
+              const sy = nd.y * UI.scale + UI.panY + wrapR.top;
+              const cx = sx + (nw * UI.scale) / 2;
+              const cy = sy + (nh * UI.scale) / 2;
+              if (cx >= rect.left && cx <= rect.right && cy >= rect.top && cy <= rect.bottom) {
+                UI.multiSel.push(nd.id);
+                document.getElementById(nd.id)?.classList.add('multi-selected');
+              }
+            });
+            if (UI.multiSel.length > 0) toast(`${UI.multiSel.length} elementos selecionados`);
+          }
+        }
+      }
+    });
     cWrap.addEventListener('wheel', e => {
       e.preventDefault();
       if (e.ctrlKey || e.metaKey) {
@@ -5998,6 +6157,16 @@ Use no máximo 12 blocos. Aplique as regras estratégicas do seu conhecimento. C
           scale: 2, useCORS: true, allowTaint: true,
           logging: false,
         };
+        // Smart bounding box: detect the area containing all elements
+        if (_exportScope === 'all' && f.nodes.length > 0) {
+          const bbox = getCanvasBoundingBox(f);
+          if (bbox) {
+            opts.x = bbox.x;
+            opts.y = bbox.y;
+            opts.width = bbox.width;
+            opts.height = bbox.height;
+          }
+        }
         const hc = await html2canvas(el, opts);
         const link = document.createElement('a');
         link.download = (f.name || 'funil').replace(/\s+/g, '_') + '.png';
@@ -6007,6 +6176,29 @@ Use no máximo 12 blocos. Aplique as regras estratégicas do seu conhecimento. C
       } catch (e) {
         console.error(e); toast('Erro ao exportar. Tente novamente.');
       }
+    }
+    function getCanvasBoundingBox(f) {
+      if (!f) f = af(); if (!f) return null;
+      const allItems = [];
+      f.nodes.forEach(n => {
+        const bd = BLOCKS[n.key];
+        const w = bd && bd.shape === 'page' ? 155 : 76;
+        const h = bd && bd.shape === 'page' ? 145 : 80;
+        allItems.push({ x: n.x, y: n.y, w, h });
+      });
+      if (f.textNodes) f.textNodes.forEach(n => {
+        allItems.push({ x: n.x, y: n.y, w: 200, h: 40 });
+      });
+      if (allItems.length === 0) return null;
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      allItems.forEach(it => {
+        if (it.x < minX) minX = it.x;
+        if (it.y < minY) minY = it.y;
+        if (it.x + it.w > maxX) maxX = it.x + it.w;
+        if (it.y + it.h > maxY) maxY = it.y + it.h;
+      });
+      const pad = 60;
+      return { x: Math.max(0, minX - pad), y: Math.max(0, minY - pad), width: (maxX - minX) + pad * 2, height: (maxY - minY) + pad * 2 };
     }
 
     // ══════════════════════════════════════════

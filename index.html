@@ -731,9 +731,19 @@
       font-size: 11px;
       font-weight: 600;
       color: var(--text2);
-      min-width: 38px;
+      width: 46px;
       text-align: center;
-      cursor: default;
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 4px;
+      outline: none;
+      cursor: text;
+      padding: 2px 3px;
+      transition: border-color .15s, background .15s;
+    }
+    #zoom-pct:hover, #zoom-pct:focus {
+      border-color: var(--border);
+      background: var(--bg2);
     }
 
     #cvg {
@@ -3300,7 +3310,10 @@
         </div>
         <div id="zoom-bar">
           <button onclick="zoomStep(-1)" title="Diminuir zoom (−)">−</button>
-          <span id="zoom-pct">100%</span>
+          <input id="zoom-pct" value="100%" title="Digite o zoom desejado (ex: 150%)"
+            onkeydown="if(event.key==='Enter'){this.blur();}"
+            onblur="zoomSetCustom(this.value)"
+            onclick="this.select()"/>
           <button onclick="zoomStep(1)" title="Aumentar zoom (+)">+</button>
           <button onclick="zoomReset()" title="Resetar zoom" style="font-size:13px">↺</button>
         </div>
@@ -5718,7 +5731,23 @@
       wrap.style.backgroundPosition = `${UI.panX}px ${UI.panY}px`;
       wrap.style.backgroundSize = `${22 * UI.scale}px ${22 * UI.scale}px`;
       const pct = document.getElementById('zoom-pct');
-      if (pct) pct.textContent = Math.round(UI.scale * 100) + '%';
+      if (pct && document.activeElement !== pct) pct.value = Math.round(UI.scale * 100) + '%';
+    }
+    function zoomSetCustom(val) {
+      // Accept formats: "150", "150%", "1.5"
+      let num = parseFloat(val.replace('%', '').trim());
+      if (isNaN(num)) { applyTransform(); return; } // reset display if invalid
+      // If value looks like a decimal scale (e.g. 1.5) convert to percent
+      if (num > 0 && num <= 10) num = num * 100;
+      num = Math.min(500, Math.max(10, num)); // clamp 10%–500%
+      const newScale = num / 100;
+      const r = document.getElementById('canvas-wrap').getBoundingClientRect();
+      const cx = r.width / 2, cy = r.height / 2;
+      // Zoom toward canvas center
+      UI.panX = cx - (cx - UI.panX) * (newScale / UI.scale);
+      UI.panY = cy - (cy - UI.panY) * (newScale / UI.scale);
+      UI.scale = newScale;
+      applyTransform(); drawLines();
     }
     function zoomStep(dir) {
       const steps = [0.1, 0.25, 0.5, 0.67, 0.75, 0.8, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2, 2.5, 3, 4, 5];

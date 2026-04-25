@@ -6428,11 +6428,12 @@ Use no máximo 12 blocos. Aplique as regras estratégicas do seu conhecimento. C
       _enterSharedView(UI._sharedFunil, name);
     }
     function _enterSharedView(funil, visitorName) {
+      // startApp chama load() que sobrescreve STATE — chamar antes de definir o funil compartilhado
+      startApp({ id: 'guest', name: visitorName, email: '' });
       const f = { ...funil, id: 'shared_' + Date.now() };
       STATE.funils = [f]; STATE.activeId = f.id;
       UI.readOnly = true;
       UI.visitorName = visitorName;
-      startApp({ id: 'guest', name: visitorName, email: '' });
       renderTabs(); renderCanvas(); drawLines();
       // Hide all editing UI
       document.getElementById('sidebar').style.display = 'none';

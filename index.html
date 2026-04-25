@@ -3557,7 +3557,12 @@
         <div class="exp-opt sel" id="exp-scope-all" onclick="setExportScope('all')">
           <div class="exp-opt-icon">🗺️</div>
           <div class="exp-opt-name">Tudo</div>
-          <div class="exp-opt-desc">Todo o canvas do funil</div>
+          <div class="exp-opt-desc">Todo o ecossistema do funil</div>
+        </div>
+        <div class="exp-opt" id="exp-scope-visible" onclick="setExportScope('visible')">
+          <div class="exp-opt-icon">🖥️</div>
+          <div class="exp-opt-name">Área Visível</div>
+          <div class="exp-opt-desc">Exatamente o que está na tela</div>
         </div>
         <div class="exp-opt" id="exp-scope-selection" onclick="setExportScope('selection')">
           <div class="exp-opt-icon">✂️</div>
@@ -6257,61 +6262,76 @@ Use no máximo 12 blocos. Aplique as regras estratégicas do seu conhecimento. C
       const f = af(); if (!f) { toast('Nenhum funil ativo'); return; }
       if (typeof html2canvas === 'undefined') { toast('html2canvas não carregado. Verifique sua conexão.'); return; }
       const canvasEl = document.getElementById('canvas');
-      let el = canvasEl;
-      if (_exportScope === 'selection' && UI.selId) {
-        el = document.getElementById(UI.selId) || canvasEl;
-      }
+      const cWrapEl = document.getElementById('canvas-wrap');
       toast('Exportando PNG...');
       closeGenModal('export-overlay');
 
-      // ── Save current transform and reset to identity ──
-      // html2canvas doesn't handle CSS transform well — coordinates go out of sync
+      // ── ÁREA VISÍVEL: captura direto o que está na tela, sem reset de transform ──
+      if (_exportScope === 'visible') {
+        try {
+          const opts = {
+            backgroundColor: _exportBg === 'white' ? '#ffffff' : null,
+            scale: 2, useCORS: true, allowTaint: true, logging: false,
+          };
+          const hc = await html2canvas(cWrapEl, opts);
+          const link = document.createElement('a');
+          link.download = (f.name || 'funil').replace(/\s+/g, '_') + '_tela.png';
+          link.href = hc.toDataURL('image/png');
+          link.click();
+          toast('✓ PNG exportado!');
+        } catch (e) { console.error(e); toast('Erro ao exportar.'); }
+        return;
+      }
+
+      // ── SELEÇÃO: captura um nó específico ──
+      if (_exportScope === 'selection' && UI.selId) {
+        const selEl = document.getElementById(UI.selId) || canvasEl;
+        const savedScale = UI.scale, savedPanX = UI.panX, savedPanY = UI.panY;
+        UI.scale = 1; UI.panX = 0; UI.panY = 0; applyTransform(); drawLines();
+        await new Promise(r => setTimeout(r, 80));
+        try {
+          const hc = await html2canvas(selEl, { backgroundColor: _exportBg === 'white' ? '#ffffff' : null, scale: 2, useCORS: true, logging: false });
+          const link = document.createElement('a');
+          link.download = (f.name || 'funil').replace(/\s+/g, '_') + '_bloco.png';
+          link.href = hc.toDataURL('image/png'); link.click();
+          toast('✓ PNG exportado!');
+        } catch (e) { console.error(e); toast('Erro ao exportar.'); }
+        finally { UI.scale = savedScale; UI.panX = savedPanX; UI.panY = savedPanY; applyTransform(); drawLines(); }
+        return;
+      }
+
+      // ── TUDO: reset transform para coordenadas corretas, crop pelo bounding box ──
       const savedScale = UI.scale, savedPanX = UI.panX, savedPanY = UI.panY;
       UI.scale = 1; UI.panX = 0; UI.panY = 0;
       applyTransform();
-      drawLines(); // re-draw connections with identity transform coords
-
-      // ── Set explicit dimensions on #cvg so html2canvas captures it ──
+      drawLines();
       const cvg = document.getElementById('cvg');
       const bbox = getCanvasBoundingBox(f);
       const svgW = bbox ? (bbox.x + bbox.width + 120) : 8000;
       const svgH = bbox ? (bbox.y + bbox.height + 120) : 8000;
       cvg.setAttribute('width', svgW);
       cvg.setAttribute('height', svgH);
-
-      // Brief delay so browser paints
       await new Promise(r => setTimeout(r, 120));
-
       try {
         const opts = {
           backgroundColor: _exportBg === 'white' ? '#ffffff' : null,
-          scale: 2, useCORS: true, allowTaint: true,
-          logging: false,
+          scale: 2, useCORS: true, allowTaint: true, logging: false,
         };
-        // Crop to just the content bounding box
-        if (_exportScope === 'all' && bbox) {
-          opts.x = bbox.x;
-          opts.y = bbox.y;
-          opts.width = bbox.width;
-          opts.height = bbox.height;
-        }
-        const hc = await html2canvas(el, opts);
+        if (bbox) { opts.x = bbox.x; opts.y = bbox.y; opts.width = bbox.width; opts.height = bbox.height; }
+        const hc = await html2canvas(canvasEl, opts);
         const link = document.createElement('a');
         link.download = (f.name || 'funil').replace(/\s+/g, '_') + '.png';
-        link.href = hc.toDataURL('image/png');
-        link.click();
+        link.href = hc.toDataURL('image/png'); link.click();
         toast('✓ PNG exportado!');
       } catch (e) {
         console.error(e); toast('Erro ao exportar. Tente novamente.');
       } finally {
-        // Restore transform and SVG
-        cvg.removeAttribute('width');
-        cvg.removeAttribute('height');
+        cvg.removeAttribute('width'); cvg.removeAttribute('height');
         UI.scale = savedScale; UI.panX = savedPanX; UI.panY = savedPanY;
-        applyTransform();
-        drawLines();
+        applyTransform(); drawLines();
       }
     }
+
     function getCanvasBoundingBox(f) {
       if (!f) f = af(); if (!f) return null;
       const allItems = [];

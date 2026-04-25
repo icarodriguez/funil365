@@ -5098,14 +5098,34 @@
       }
       if (UI.isDrag && UI.dragId) {
         const f = af(); if (!f) return;
-        let nd = f.nodes.find(n => n.id === UI.dragId);
-        if (!nd && f.textNodes) nd = f.textNodes.find(n => n.id === UI.dragId);
-        if (!nd) return;
         const r = document.getElementById('canvas-wrap').getBoundingClientRect();
-        nd.x = (e.clientX - r.left - UI.panX) / UI.scale - UI.offX;
-        nd.y = (e.clientY - r.top - UI.panY) / UI.scale - UI.offY;
-        const el = document.getElementById(UI.dragId);
-        if (el) { el.style.left = nd.x + 'px'; el.style.top = nd.y + 'px'; }
+        const mx = (e.clientX - r.left - UI.panX) / UI.scale;
+        const my = (e.clientY - r.top - UI.panY) / UI.scale;
+
+        // ── GROUP DRAG: move all selected nodes together ──
+        if (UI.multiSel.length > 1 && UI.multiSel.includes(UI.dragId) && UI._lastMultiDrag) {
+          const dx = mx - UI._lastMultiDrag.x;
+          const dy = my - UI._lastMultiDrag.y;
+          UI._lastMultiDrag = { x: mx, y: my };
+          UI.multiSel.forEach(id => {
+            let nd = f.nodes.find(n => n.id === id);
+            if (!nd && f.textNodes) nd = f.textNodes.find(n => n.id === id);
+            if (!nd) return;
+            nd.x += dx; nd.y += dy;
+            const el = document.getElementById(id);
+            if (el) { el.style.left = nd.x + 'px'; el.style.top = nd.y + 'px'; }
+          });
+        } else {
+          // Single drag
+          let nd = f.nodes.find(n => n.id === UI.dragId);
+          if (!nd && f.textNodes) nd = f.textNodes.find(n => n.id === UI.dragId);
+          if (nd) {
+            nd.x = mx - UI.offX;
+            nd.y = my - UI.offY;
+            const el = document.getElementById(UI.dragId);
+            if (el) { el.style.left = nd.x + 'px'; el.style.top = nd.y + 'px'; }
+          }
+        }
         drawLines();
       }
       if (UI.connFrom) drawLines(e);
@@ -5152,9 +5172,58 @@
       const copy = { ...nd, id: newId, x: nd.x + 40, y: nd.y + 40, impressoes: 0, leads: 0, vendas: 0, receita: 0 };
       f.nodes.push(copy); renderNode(copy); updateEmpty(); updateStats(); selectNode(newId);
       UI.isDrag = true; UI.dragId = newId;
-      const r = document.getElementById('canvas-wrap').getBoundingClientRect();
       UI.offX = 40; UI.offY = 40;
       save();
+    }
+    function duplicateSelection() {
+      const f = af(); if (!f) return;
+      // Duplicate single selection
+      if (UI.selId && UI.multiSel.length === 0) {
+        // Try regular node first
+        const nd = f.nodes.find(n => n.id === UI.selId);
+        if (nd) { duplicateNode(UI.selId); return; }
+        // Try text node
+        const tn = f.textNodes && f.textNodes.find(n => n.id === UI.selId);
+        if (tn) {
+          pushUndo();
+          const newId = 't' + (++UI.nCounter);
+          const copy = { ...tn, id: newId, x: tn.x + 30, y: tn.y + 30 };
+          f.textNodes.push(copy); renderTextNode(copy); selectNode(newId); save();
+          return;
+        }
+      }
+      // Duplicate multi-selection
+      if (UI.multiSel.length > 0) {
+        pushUndo();
+        const idMap = {}; // old id -> new id
+        const newIds = [];
+        UI.multiSel.forEach(id => {
+          const nd = f.nodes.find(n => n.id === id);
+          if (nd) {
+            const newId = 'n' + (++UI.nCounter);
+            idMap[id] = newId;
+            const copy = { ...nd, id: newId, x: nd.x + 30, y: nd.y + 30, impressoes: 0, leads: 0, vendas: 0, receita: 0 };
+            f.nodes.push(copy); renderNode(copy);
+            newIds.push(newId);
+          }
+          const tn = f.textNodes && f.textNodes.find(n => n.id === id);
+          if (tn) {
+            const newId = 't' + (++UI.nCounter);
+            idMap[id] = newId;
+            const copy = { ...tn, id: newId, x: tn.x + 30, y: tn.y + 30 };
+            f.textNodes.push(copy); renderTextNode(copy);
+            newIds.push(newId);
+          }
+        });
+        // Select the new copies
+        clearMultiSel();
+        newIds.forEach(id => {
+          UI.multiSel.push(id);
+          document.getElementById(id)?.classList.add('multi-selected');
+        });
+        updateEmpty(); updateStats(); drawLines(); save();
+        toast(`✓ ${newIds.length} elemento(s) duplicado(s)`);
+      }
     }
     function addConn(from, to) {
       const f = af(); if (!f) return;
@@ -5603,6 +5672,17 @@
       if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo(); return; }
       if ((e.ctrlKey || e.metaKey) && e.key === 'z' && e.shiftKey) { e.preventDefault(); redo(); return; }
       if ((e.ctrlKey || e.metaKey) && e.key === 'y') { e.preventDefault(); redo(); return; }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'd') { e.preventDefault(); duplicateSelection(); return; }
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        // Delete all selected nodes
+        if (UI.multiSel.length > 0) {
+          [...UI.multiSel].forEach(id => deleteNode(id));
+          clearMultiSel();
+        } else if (UI.selId) {
+          deleteNode(UI.selId);
+        }
+        return;
+      }
       if (e.key === 'v') setTool('cursor');
       if (e.key === 'p') setTool('brush');
       if (e.key === 'e') setTool('eraser');
